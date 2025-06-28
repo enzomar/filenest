@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, conint 
-from pydantic_setttings import BaseSettings
+from pydantic_settings import BaseSettings
 from tinydb import TinyDB, Query
 
 # --------------

@@ -52,10 +52,18 @@ logger = logging.getLogger(__name__)
 # -------------------------
 # DB Setup
 # -------------------------
+# Fix DB folder existence and absolute path for SQLite
+db_url = settings.DATABASE_URL
+if db_url.startswith("sqlite:///"):
+    db_path = db_url.replace("sqlite:///", "")
+    db_dir = os.path.dirname(os.path.abspath(db_path)) or "."
+    os.makedirs(db_dir, exist_ok=True)
+    settings.DATABASE_URL = f"sqlite:///{os.path.abspath(db_path)}"
 
 engine = create_engine(
     settings.DATABASE_URL, connect_args={"check_same_thread": False}
 )
+
 Base = declarative_base()
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 

@@ -17,7 +17,7 @@ A lightweight, production-ready FastAPI-based file upload service with:
 
 ## Features
 
-- **Upload files with metadata** via `/upload_with_metadata/`
+- **Upload files with metadata** via `/upload/`
 - Files and metadata are stored securely
 - Files are deleted automatically after TTL expiration
 - Publicly accessible file URLs
@@ -72,7 +72,7 @@ http://localhost:8000
 
 ## Uploading a File with Metadata
 
-Send a POST request to `/upload_with_metadata/` with:
+Send a POST request to `/upload/` with:
 
 - Header: `x-api-key: your_api_key`
 - Form Data:
@@ -83,7 +83,7 @@ Send a POST request to `/upload_with_metadata/` with:
 ### Example with `curl`
 
 ```bash
-curl -X POST "http://localhost:8000/upload_with_metadata/" \
+curl -X POST "http://localhost:8000/upload/" \
   -H "x-api-key: supersecretapikey" \
   -F "file=@/path/to/image.png" \
   -F 'metadata_json={"author":"Vincenzo","description":"Test upload"}' \

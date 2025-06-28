@@ -127,7 +127,7 @@ class UpdateMetadataRequest(BaseModel):
 # Routes
 # --------------
 
-@app.post("/upload/")
+@app.post("/records/")
 async def upload_file(
     request: Request,
     file: UploadFile = File(...),
@@ -166,7 +166,7 @@ async def upload_file(
 
     return {"id": file_id, "file_url": f"{request.base_url}files/{filename}"}
 
-@app.get("/metadata/{record_id}")
+@app.get("/records/{record_id}")
 def get_metadata(record_id: str, request: Request, api_key: str = Security(get_api_key)):
     File = Query()
     result = FileTable.get(File.id == record_id)
@@ -183,7 +183,7 @@ def get_metadata(record_id: str, request: Request, api_key: str = Security(get_a
         "updated_at": result["updated_at"]
     }
 
-@app.get("/search_metadata")
+@app.get("/records")
 def search_metadata(
     key: str = FastAPIQuery(...),
     value: str = FastAPIQuery(...),
@@ -193,7 +193,7 @@ def search_metadata(
     return results
 
 
-@app.delete("/file/{record_id}", status_code=200)
+@app.delete("/records/{record_id}", status_code=200)
 def delete_file(
     record_id: str = Path(..., description="ID of the file to delete"),
     api_key: str = Security(get_api_key),
@@ -210,7 +210,7 @@ def delete_file(
     FileTable.remove(File.id == record_id)
     return {"status": "success", "message": f"File '{result['filename']}' deleted."}
 
-@app.put("/file/{record_id}/metadata", status_code=200)
+@app.put("/records/{record_id}/metadata", status_code=200)
 def update_metadata(
     record_id: str = Path(..., description="ID of the file metadata to update"),
     body: UpdateMetadataRequest = ...,

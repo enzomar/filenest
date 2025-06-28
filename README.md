@@ -1,29 +1,30 @@
 # FileNest - Secure TTL File Storage Service
 
-A lightweight FastAPI-based file upload server with:
+A lightweight, production-ready FastAPI-based file upload service with:
 
-- API key authentication
-- File size limit (default 10 MB)
-- File TTL (automatic expiration and deletion)
-- PostgreSQL or SQLite metadata storage
-- File storage with static serving
-- Background cleanup task
-- Production-ready Docker Compose setup with Nginx reverse proxy
-- Health check endpoint
-- CORS middleware
+- ✅ API key authentication
+- ✅ File size limit (default 10 MB)
+- ✅ Automatic file expiration via TTL (default: 1 hour)
+- ✅ SQLite or PostgreSQL metadata storage
+- ✅ Metadata and file association via UUID
+- ✅ Static file serving
+- ✅ Background cleanup task
+- ✅ Health check endpoint
+- ✅ CORS support
+- ✅ Docker Compose setup (optional)
 
 ---
 
 ## Features
 
-- Upload files via `/upload/` with API key header
-- Validate TTL (time to live) for automatic cleanup
-- Files accessible via `/files/{filename}`
-- Protect uploads with API key (default in `.env`)
-- Size restriction with 413 error if exceeded
-- Background cleanup every 60 seconds deletes expired files
-- Logging for uploads and cleanup
-- Static file serving optimized by Nginx
+- **Upload files with metadata** via `/upload_with_metadata/`
+- Files and metadata are stored securely
+- Files are deleted automatically after TTL expiration
+- Publicly accessible file URLs
+- Background cleanup task runs every 60 seconds
+- API key protects all upload and metadata endpoints
+- Static files served via `/files/{filename}`
+- Health check endpoint at `/health`
 
 ---
 
@@ -31,82 +32,139 @@ A lightweight FastAPI-based file upload server with:
 
 ### Prerequisites
 
-- Docker & Docker Compose installed
-- (Optional) Python 3.11+ if running without Docker
-- `.env` file with `API_KEY` set
-
+- Docker & Docker Compose (recommended)
+- Or Python 3.11+ and pip (for manual run)
+- `.env` file with at least the `API_KEY`
 
 ---
 
 ### Environment Variables
 
-| Variable  | Description                   | Default               |
-|-----------|-------------------------------|-----------------------|
-| `API_KEY` | API key for authentication    | `supersecretapikey`   |
-
-Set this in your environment or in the `docker-compose.yml` file.
-
----
-
-### Running with Docker Compose
-
-1. Clone the repo and navigate to the project root:
-   ```bash
-   git clone <repo-url>
-   cd FileNest
-   ```
-
-2. Start the service:
-   ```bash
-   docker-compose up --build
-   ```
-
-3. The service runs on `http://localhost:8000`
+| Variable              | Description                            | Default                 |
+|-----------------------|----------------------------------------|-------------------------|
+| `API_KEY`             | API key for authentication             | `supersecretapikey`     |
+| `API_KEY_NAME`        | Name of the header for API key         | `x-api-key`             |
+| `MAX_FILE_SIZE`       | Max file size in bytes                 | `10485760` (10 MB)      |
+| `DEFAULT_TTL_SECONDS` | Default time-to-live for files         | `3600` (1 hour)         |
+| `MAX_TTL_SECONDS`     | Max allowed TTL                        | `2592000` (30 days)     |
+| `DATABASE_URL`        | SQLite/PostgreSQL connection string    | `sqlite:///./data/file_metadata.db` |
+| `CLEANUP_INTERVAL_SEC`| File cleanup task interval (in sec)    | `60`                    |
+| `STORAGE_DIR`         | Directory where files are saved        | `storage`               |
+| `CORS_ORIGINS`        | Allowed frontend domains (CORS)        | `["https://yourfrontend.domain"]` |
 
 ---
 
-### Uploading a File
-
-Send a POST request to `/upload/` with:
-
-- Header: `x-api-key: your_api_key`
-- Form data:
-  - `file`: file to upload
-  - `ttl_seconds`: optional, time in seconds before auto-deletion
-
-Example with `curl`:
+## Run with Docker Compose
 
 ```bash
-curl -X POST "http://localhost:8000/upload/" \
+git clone <repo-url>
+cd FileNest
+docker-compose up --build
+```
+
+The service will be accessible at:
+
+```
+http://localhost:8000
+```
+
+---
+
+## Uploading a File with Metadata
+
+Send a POST request to `/upload_with_metadata/` with:
+
+- Header: `x-api-key: your_api_key`
+- Form Data:
+  - `file`: File to upload
+  - `metadata_json`: Metadata in JSON format
+  - `ttl_seconds`: Optional TTL in seconds
+
+### Example with `curl`
+
+```bash
+curl -X POST "http://localhost:8000/upload_with_metadata/" \
   -H "x-api-key: supersecretapikey" \
-  -F "file=@/path/to/your/file.png" \
+  -F "file=@/path/to/image.png" \
+  -F 'metadata_json={"author":"Vincenzo","description":"Test upload"}' \
   -F "ttl_seconds=3600"
 ```
 
-Response:
+#### Example Response:
 
 ```json
 {
-  "file_url": "/files/{generated-filename}.png"
+  "id": "c123f9e1-xxx-xxxx-xxxx-xxxxxx",
+  "file_url": "http://localhost:8000/files/image.png"
 }
 ```
 
 ---
 
-### Accessing Files
+## Retrieving File Metadata
 
-Files are accessible publicly at:
+Get full metadata and URL by record ID:
+
+```http
+GET /metadata/{id}
+Header: x-api-key: your_api_key
+```
+
+#### Example:
+
+```bash
+curl -H "x-api-key: supersecretapikey" http://localhost:8000/metadata/c123f9e1-xxxx
+```
+
+#### Response:
+
+```json
+{
+  "id": "c123f9e1-xxxx",
+  "file_url": "http://localhost:8000/files/image.png",
+  "metadata": {
+    "author": "Vincenzo",
+    "description": "Test upload"
+  },
+  "ttl_seconds": 3600,
+  "upload_time": "2025-06-28T14:01:22.548Z"
+}
+```
+
+---
+
+## File Access
+
+Files are served from:
 
 ```
 http://localhost:8000/files/{filename}
 ```
 
+These links are public, but the metadata requires API key access.
+
 ---
 
-### File Cleanup
+## Cleanup
 
-- Files uploaded with TTL are automatically deleted after expiration.
-- Cleanup runs every 60 seconds in the background.
+- Files and metadata are removed automatically after TTL.
+- Cleanup runs every 60 seconds.
+
+---
+
+## Health Check
+
+Check service status with:
+
+```http
+GET /health
+```
+
+Response:
+
+```json
+{"status": "ok"}
+```
 
 ---
 
@@ -114,12 +172,13 @@ http://localhost:8000/files/{filename}
 
 ```
 FileNest/
+├── storage/                  # Uploaded files
+├── data/                     # SQLite DB directory
+│   └── file_metadata.db
 ├── backend/
-│   ├── main.py
+│   ├── main.py               # FastAPI application
 │   ├── requirements.txt
 │   └── Dockerfile
-├── storage/
-├── file_metadata.db
 ├── docker-compose.yml
 └── README.md
 ```
@@ -128,40 +187,43 @@ FileNest/
 
 ## Customization
 
-Adjust settings in .env or modify backend/main.py (using Pydantic BaseSettings):
+You can override settings in `.env`:
 
-- API_KEY: API key for authentication
-- MAX_FILE_SIZE: max upload size in bytes (default 10 MB)
-- STORAGE_DIR: folder where files are stored
-- DATABASE_URL: DB connection string (SQLite or Postgres)
-- CLEANUP_INTERVAL_SEC: interval in seconds for cleanup task
-- MAX_TTL_SECONDS: max allowed TTL in seconds
+```ini
+API_KEY=your_own_api_key
+MAX_FILE_SIZE=5242880
+DEFAULT_TTL_SECONDS=1800
+DATABASE_URL=sqlite:///./data/file_metadata.db
+```
+
+Or modify `main.py` for advanced tweaks.
 
 ---
 
-## Deployment Notes
+## Deployment Tips
 
-- Run behind HTTPS proxy (Nginx, Traefik, etc.)
-- For production, serve static files directly from Nginx
-- Monitor logs and health endpoint
-- Consider moving to Postgres for higher loads
-
+- Serve behind HTTPS proxy (Nginx, Traefik)
+- Let Nginx serve static files directly for performance
+- Mount volumes to persist files and database
+- Use Postgres in production for scaling
 
 ---
 
 ## Troubleshooting
 
-
-- 413 Payload Too Large: File size exceeds max limit (MAX_FILE_SIZE)
-- 403 Forbidden: Invalid or missing API key
-- File not found: May be expired or not uploaded correctly
+| Error Code | Meaning                         | Possible Fix                      |
+|------------|----------------------------------|-----------------------------------|
+| `413`      | Payload Too Large               | File exceeds `MAX_FILE_SIZE`      |
+| `403`      | Forbidden                        | Invalid or missing API key        |
+| `409`      | Conflict                         | File with same name already exists|
+| `404`      | Not Found                        | ID does not exist or file expired |
 
 ---
 
 ## License
 
-MIT License © Vincenzo Marafioti
+MIT License © [Vincenzo Marafioti](mailto:enzo.mar@gmail.com)
 
 ---
 
-Feel free to contribute or open issues!
+Feel free to submit issues, PRs, or feature requests. Contributions welcome!

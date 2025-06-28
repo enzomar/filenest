@@ -11,7 +11,7 @@ from typing import Optional, Dict, Any
 
 import aiofiles
 from fastapi import (
-    FastAPI, UploadFile, File, Form, HTTPException, Path
+    FastAPI, UploadFile, File, Form, HTTPException, Path,
     Security, status, Request, Depends, Query as FastAPIQuery
 )
 from fastapi.responses import JSONResponse

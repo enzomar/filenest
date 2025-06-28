@@ -6,9 +6,8 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 import aiofiles
-from fastapi import (
-    FastAPI, UploadFile, File, HTTPException, Security, status, Request
-)
+from fastapi import FastAPI, UploadFile, File, HTTPException, Security, status, Request
+
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security.api_key import APIKeyHeader
@@ -19,6 +18,8 @@ from pydantic_settings import BaseSettings
 from sqlalchemy import create_engine, Column, String, DateTime, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import text
+
 
 # -------------------------
 # Config & Settings
@@ -29,7 +30,7 @@ class Settings(BaseSettings):
     API_KEY_NAME: str = "x-api-key"
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
     STORAGE_DIR: str = "storage"
-    DATABASE_URL: str = "sqlite:///./file_metadata.db"
+    DATABASE_URL: str = "sqlite:///./data/file_metadata.db"
     CLEANUP_INTERVAL_SEC: int = 60
     MAX_TTL_SECONDS: int = 60 * 60 * 24 * 30  # max 30 days TTL
 
@@ -133,16 +134,24 @@ def validate_ttl(ttl: Optional[int]) -> Optional[int]:
 
 @app.post("/upload/", status_code=status.HTTP_201_CREATED)
 async def upload_file(
+    request: Request,
     file: UploadFile = File(...),
     ttl_seconds: Optional[conint(gt=0)] = None,
     api_key: str = Security(get_api_key)
 ) -> JSONResponse:
     ttl_seconds = validate_ttl(ttl_seconds)
-    file_ext = os.path.splitext(file.filename)[1]
-    file_id = f"{uuid.uuid4()}{file_ext}"
-    file_path = os.path.join(settings.STORAGE_DIR, file_id)
+    safe_filename = os.path.basename(file.filename)  # Prevent path traversal
+    file_path = os.path.join(settings.STORAGE_DIR, safe_filename)
 
-    logger.info(f"Start uploading file {file.filename} as {file_id}")
+    logger.info(f"Start uploading file {safe_filename}")
+
+    # Check if file already exists
+    if os.path.exists(file_path):
+        logger.warning(f"Upload failed: file {safe_filename} already exists")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"File '{safe_filename}' already exists."
+        )
 
     size = 0
     try:
@@ -152,28 +161,41 @@ async def upload_file(
                 if size > settings.MAX_FILE_SIZE:
                     await out_file.close()
                     await aiofiles.os.remove(file_path)
-                    logger.warning(f"File {file.filename} rejected due to size > {settings.MAX_FILE_SIZE}")
+                    logger.warning(f"File {safe_filename} rejected: size > {settings.MAX_FILE_SIZE}")
                     raise HTTPException(
                         status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                        detail=f"File too large. Max size is {settings.MAX_FILE_SIZE // (1024*1024)} MB."
+                        detail=f"File too large. Max size is {settings.MAX_FILE_SIZE // (1024 * 1024)} MB."
                     )
                 await out_file.write(chunk)
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to save file {file.filename}: {e}", exc_info=True)
+        logger.error(f"Failed to save file {safe_filename}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to save file: {e}")
 
     # Save metadata
     with get_db_session() as db:
-        meta = FileMeta(id=file_id, filename=file_id, ttl_seconds=ttl_seconds)
+        meta = FileMeta(id=safe_filename, filename=safe_filename, ttl_seconds=ttl_seconds)
         db.add(meta)
         db.commit()
 
-    file_url = f"/files/{file_id}"
-    logger.info(f"File {file.filename} uploaded successfully as {file_id}")
+    full_url = f"{request.base_url}files/{safe_filename}"
+    logger.info(f"File {safe_filename} uploaded successfully")
 
-    return JSONResponse({"file_url": file_url})
+    return JSONResponse({"file_url": full_url})
+
+
+
+@app.get("/health", tags=["Health"])
+def health_check():
+    try:
+        with get_db_session() as db:
+            db.execute(text("SELECT 1"))  # wrap raw SQL in text()
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Healthcheck failed: {e}")
+        raise HTTPException(status_code=500, detail="Database connection failed")
+
 
 # -------------------------
 # Background cleanup task

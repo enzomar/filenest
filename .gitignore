@@ -20,7 +20,7 @@ venv.bak/
 .DS_Store
 
 # SQLite DB file
-file_metadata.db
+data/
 
 # Storage folder (uploaded files)
 storage/

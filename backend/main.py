@@ -22,6 +22,7 @@ from pydantic import BaseModel, conint
 from pydantic_settings import BaseSettings
 from tinydb import TinyDB, Query
 
+
 # --------------
 # Settings
 # --------------
@@ -185,11 +186,48 @@ def get_metadata(record_id: str, request: Request, api_key: str = Security(get_a
 
 @app.get("/records")
 def search_metadata(
-    key: str = FastAPIQuery(...),
-    value: str = FastAPIQuery(...),
+    key: str = FastAPIQuery(..., description="Metadata key to search for"),
+    value: str = FastAPIQuery(..., description="Value to match"),
+    value_type: str = FastAPIQuery("string", regex="^(string|boolean|number|datetime)$", description="Type of the value"),
     api_key: str = Security(get_api_key)
 ):
-    results = [record for record in FileTable.all() if record.get("metadata", {}).get(key) == value]
+    def cast_value(v, vtype):
+        try:
+            if vtype == "string":
+                return str(v)
+            elif vtype == "boolean":
+                # Accept "true", "false" (case-insensitive)
+                return v.lower() == "true"
+            elif vtype == "number":
+                # Try int or float
+                if '.' in v:
+                    return float(v)
+                else:
+                    return int(v)
+            elif vtype == "datetime":
+                # Parse ISO format datetime
+                return datetime.fromisoformat(v)
+        except Exception:
+            # If casting fails, return original
+            return v
+
+    results = []
+    for record in FileTable.all():
+        meta = record.get("metadata", {})
+        val = meta.get(key)
+        if val is None:
+            continue
+        
+        # Cast both to proper type before comparison
+        try:
+            val_casted = cast_value(str(val), value_type)
+            value_casted = cast_value(value, value_type)
+        except Exception:
+            continue
+
+        if val_casted == value_casted:
+            results.append(record)
+
     return results
 
 

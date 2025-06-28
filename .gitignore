@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# SQLite DB file
+file_metadata.db
+
+# Storage folder (uploaded files)
+storage/
+
+# Logs
+*.log
+
+# Docker
+*.log
+*.pid
+*.seed
+*.pid.lock
+docker-compose.override.yml
+
+# Python bytecode
+*.pyc
+
+# Pipenv
+Pipfile.lock
+
+# mypy cache
+.mypy_cache/
+
+# pytest cache
+.pytest_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+
+# FastAPI / Starlette stuff (if any)
+*.db-journal
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Local config files
+*.local
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/

@@ -5,6 +5,5 @@ __pycache__/
 *.log
 *.sqlite3
 *.env
-test/
 data/
 storage/

@@ -168,7 +168,11 @@ async def upload_file(
     return {"id": file_id, "file_url": f"{request.base_url}files/{filename}"}
 
 @app.get("/records/{record_id}")
-def get_metadata(record_id: str, request: Request, api_key: str = Security(get_api_key)):
+def get_metadata(
+    record_id: str,
+    request: Request,
+    api_key: str = Security(get_api_key)
+):
     File = Query()
     result = FileTable.get(File.id == record_id)
     if not result:
@@ -177,15 +181,16 @@ def get_metadata(record_id: str, request: Request, api_key: str = Security(get_a
     return {
         "id": result["id"],
         "file_url": f"{request.base_url}files/{result['filename']}",
-        "metadata": result["metadata"],
-        "ttl_seconds": result["ttl_seconds"],
-        "upload_time": result["upload_time"],
-        "created_at": result["created_at"],
-        "updated_at": result["updated_at"]
+        "metadata": result.get("metadata"),
+        "ttl_seconds": result.get("ttl_seconds"),
+        "upload_time": result.get("upload_time"),
+        "created_at": result.get("created_at"),
+        "updated_at": result.get("updated_at")
     }
 
 @app.get("/records")
 def search_metadata(
+    request: Request,
     key: str = FastAPIQuery(..., description="Metadata key to search for"),
     value: str = FastAPIQuery(..., description="Value to match"),
     value_type: str = FastAPIQuery("string", regex="^(string|boolean|number|datetime)$", description="Type of the value"),
@@ -219,11 +224,20 @@ def search_metadata(
             continue
 
         if val_casted == value_casted:
-            results.append(record)
+            results.append({
+                "id": record["id"],
+                "file_url": f"{request.base_url}files/{record['filename']}",
+                "metadata": record.get("metadata"),
+                "ttl_seconds": record.get("ttl_seconds"),
+                "upload_time": record.get("upload_time"),
+                "created_at": record.get("created_at"),
+                "updated_at": record.get("updated_at"),
+            })
             if len(results) >= limit:
                 break
 
     return results
+
 
 
 @app.delete("/records/{record_id}", status_code=200)

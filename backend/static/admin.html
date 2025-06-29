@@ -2,241 +2,483 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FileNest Admin Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.css" rel="stylesheet" />
-
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <link
+    href="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.css"
+    rel="stylesheet"
+    type="text/css"
+  />
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f8f9fa;
+      background-color: #f4f4f4;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
       margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #333;
     }
-
     header {
-      background-color: #343a40;
-      color: white;
+      background-color: #2c3e50;
+      color: #ecf0f1;
       padding: 1rem;
       text-align: center;
+      font-weight: 700;
       font-size: 1.5rem;
-      font-weight: bold;
+      user-select: none;
     }
-
-    .dashboard {
+    main.dashboard {
+      flex: 1 1 auto;
       display: flex;
-      height: 100vh;
       overflow: hidden;
+      padding: 0.5rem;
+      gap: 0.5rem;
     }
-
     .panel-wrapper {
       display: flex;
       flex-direction: column;
-      transition: all 0.3s ease;
-      position: relative;
-      min-width: 40px;
-    }
-
-    .panel-wrapper.collapsed {
-      flex: 0 0 40px !important;
+      background: white;
+      border-radius: 0.375rem;
+      box-shadow: 0 0 8px rgb(0 0 0 / 0.1);
       overflow: hidden;
+      transition: width 0.3s ease;
     }
-
     .panel-header {
-      background: #dee2e6;
+      background: #ecf0f1;
       padding: 0.75rem 1rem;
-      font-weight: bold;
+      font-weight: 600;
       cursor: pointer;
       user-select: none;
-      border-bottom: 1px solid #ced4da;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      overflow: hidden;
+      border-bottom: 1px solid #bdc3c7;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-
-    .panel-wrapper.collapsed .panel-header {
-      writing-mode: vertical-rl;
-      transform: rotate(180deg);
-      text-align: center;
-      padding: 1rem 0.2rem;
+    .panel-content {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 1rem;
     }
-
-    .readonly {
-      background-color: #f1f3f5;
+    #filesList {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    ul#list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      overflow-y: auto;
+      flex: 1 1 auto;
+    }
+    ul#list li {
+      background: #fefefe;
+      margin-bottom: 0.5rem;
+      padding: 0.75rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    ul#list li:hover,
+    ul#list li.active {
+      background: #dcdde1;
+    }
+    #jsonEditor {
+      height: 300px;
+      border: 1px solid #ced4da;
+      border-radius: 0.375rem;
+      background: #fff;
+    }
+    #info > div {
+      background-color: #f0f0f0;
       padding: 0.5rem;
-      border-radius: 5px;
+      border-radius: 0.375rem;
       margin-bottom: 0.5rem;
       font-size: 0.9rem;
     }
-
-    img {
-      max-width: 100%;
-      max-height: 60vh;
-      object-fit: contain;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      background: #fff;
+    button#saveMetadataBtn {
+      margin-top: 0.75rem;
     }
-
-    #jsonEditor {
-      height: 300px;
+    img#image {
+      max-width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
+      border-radius: 0.375rem;
+      border: 1px solid #ced4da;
+      background: white;
+    }
+    form#searchForm input,
+    form#searchForm select,
+    form#searchForm button {
+      margin-bottom: 0.5rem;
+    }
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
 <body>
-<header>📁 FileNest Admin Dashboard</header>
-<div class="container mt-5" id="authContainer">
-  <div class="card mx-auto" style="max-width: 400px;">
-    <div class="card-body text-center">
-      <h5 class="card-title">Enter Admin API Key</h5>
-      <input type="password" id="apiKeyInput" class="form-control mb-3" placeholder="API Key" />
-      <button class="btn btn-success w-100" onclick="loadData()">Login</button>
-    </div>
-  </div>
-</div>
+  <header>FileNest Admin Dashboard</header>
 
-<main class="dashboard d-none" id="dashboard">
-  <section class="panel-wrapper border-end" id="filesWrapper" style="flex: 0 0 25%;">
-    <div class="panel-header" onclick="toggleColumn('filesWrapper')">📁 Files</div>
-    <div class="p-3 overflow-auto">
-      <form id="searchForm" onsubmit="handleSearch(event)" class="mb-3">
-        <div class="row g-2">
-          <div class="col-6"><input id="searchKey" class="form-control" placeholder="Key" /></div>
-          <div class="col-6"><input id="searchValue" class="form-control" placeholder="Value" /></div>
-          <div class="col-6">
-            <select id="searchType" class="form-select">
-              <option value="string">String</option>
-              <option value="number">Number</option>
-              <option value="boolean">Boolean</option>
-              <option value="datetime">Datetime</option>
-            </select>
-          </div>
-          <div class="col-6"><input type="number" id="searchLimit" class="form-control" placeholder="Limit" min="1" max="1000" /></div>
-          <div class="col-12"><button class="btn btn-primary w-100">Search</button></div>
-        </div>
-      </form>
-      <ul id="list" class="list-group"></ul>
+  <section
+    class="container mt-5"
+    id="authContainer"
+    style="max-width: 400px;"
+  >
+    <div class="card shadow-sm p-4">
+      <h2 class="mb-3 text-center">Enter Admin API Key</h2>
+      <input
+        type="password"
+        id="apiKeyInput"
+        placeholder="API Key"
+        class="form-control mb-3"
+      />
+      <button class="btn btn-success w-100" onclick="loadData()">
+        Login
+      </button>
     </div>
   </section>
 
-  <section class="panel-wrapper border-end" id="previewWrapper" style="flex: 0 0 40%;">
-    <div class="panel-header" onclick="toggleColumn('previewWrapper')">🖼️ Preview</div>
-    <div class="p-3 overflow-auto">
-      <img id="image" src="" class="img-fluid" />
-    </div>
-  </section>
+  <main class="dashboard container-fluid px-3" id="dashboard" style="display:none">
+    <!-- Files Panel -->
+    <section
+      class="panel-wrapper"
+      id="filesPanelWrapper"
+      style="width: 25%; min-width: 250px;"
+    >
+      <div class="panel-header" onclick="toggleColumn('filesPanelWrapper')">
+        📁 Files
+        <span id="filesToggleIcon" style="user-select:none;">&#x25C0;</span>
+      </div>
+      <div class="panel-content" id="filesPanel">
+        <form
+          id="searchForm"
+          onsubmit="handleSearch(event)"
+          class="d-flex flex-wrap gap-2"
+        >
+          <input
+            type="text"
+            id="searchKey"
+            list="metadataKeys"
+            placeholder="Key"
+            class="form-control flex-grow-1"
+            style="min-width: 120px;"
+          />
+          <datalist id="metadataKeys"></datalist>
 
-  <section class="panel-wrapper" id="metadataWrapper" style="flex: 0 0 35%;">
-    <div class="panel-header" onclick="toggleColumn('metadataWrapper')">📝 Metadata</div>
-    <div class="p-3 overflow-auto">
-      <div id="jsonEditor"></div>
-      <button class="btn btn-success mt-3" onclick="saveMetadata()">Save</button>
-      <h5 class="mt-4">Info</h5>
-      <div id="info"></div>
-    </div>
-  </section>
-</main>
+          <input
+            type="text"
+            id="searchValue"
+            placeholder="Value"
+            class="form-control flex-grow-1"
+            style="min-width: 120px;"
+          />
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.js"></script>
-<script>
-  let files = [], current = null, jsonEditor = null;
+          <select
+            id="searchType"
+            class="form-select flex-grow-1"
+            style="min-width: 120px;"
+          >
+            <option value="string">string</option>
+            <option value="number">number</option>
+            <option value="boolean">boolean</option>
+            <option value="datetime">datetime</option>
+          </select>
 
-  function loadData() {
-    const key = document.getElementById("apiKeyInput").value;
-    fetch("/records", { headers: { "x-api-key": key } })
-      .then(r => r.json())
-      .then(data => {
-        files = data;
-        document.getElementById("authContainer").classList.add("d-none");
-        document.getElementById("dashboard").classList.remove("d-none");
+          <input
+            type="number"
+            id="searchLimit"
+            placeholder="Limit (default 50)"
+            min="1"
+            max="1000"
+            class="form-control flex-grow-1"
+            style="min-width: 120px;"
+          />
+          <button type="submit" class="btn btn-primary flex-grow-1">Search</button>
+        </form>
 
-        const ul = document.getElementById("list");
-        ul.innerHTML = "";
-        data.forEach(f => {
-          const li = document.createElement("li");
-          li.className = "list-group-item";
-          li.textContent = f.file_name || f.id;
-          li.onclick = () => showFile(f);
-          ul.appendChild(li);
-        });
+        <ul id="list" class="mt-3"></ul>
+      </div>
+    </section>
 
+    <!-- Preview Panel -->
+    <section
+      class="panel-wrapper"
+      id="previewPanelWrapper"
+      style="width: 40%; min-width: 350px;"
+    >
+      <div class="panel-header" onclick="toggleColumn('previewPanelWrapper')">
+        🖼️ Preview
+        <span id="previewToggleIcon" style="user-select:none;">&#x25C0;</span>
+      </div>
+      <div class="panel-content" id="previewPanel">
+        <img id="image" src="" alt="Preview image" />
+      </div>
+    </section>
+
+    <!-- Metadata Panel -->
+    <section
+      class="panel-wrapper"
+      id="metadataPanelWrapper"
+      style="width: 35%; min-width: 350px;"
+    >
+      <div class="panel-header" onclick="toggleColumn('metadataPanelWrapper')">
+        📝 Metadata
+        <span id="metadataToggleIcon" style="user-select:none;">&#x25C0;</span>
+      </div>
+      <div class="panel-content" id="metadataPanel">
+        <div id="jsonEditor"></div>
+        <button id="saveMetadataBtn" class="btn btn-success w-100" onclick="saveMetadata()">
+          Save Metadata
+        </button>
+        <h4 class="mt-4">Info</h4>
+        <div id="info"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    let files = [];
+    let current = null;
+    let jsonEditor = null;
+
+    // Keep track of which panels are visible
+    const panelIds = [
+      "filesPanelWrapper",
+      "previewPanelWrapper",
+      "metadataPanelWrapper",
+    ];
+
+    // Load Data & Initialize
+    function loadData() {
+      const key = document.getElementById("apiKeyInput").value.trim();
+      if (!key) {
+        alert("Please enter API key");
+        return;
+      }
+      fetch("/records", {
+        headers: { "x-api-key": key },
+      })
+        .then((r) => {
+          if (!r.ok) throw new Error("Auth failed");
+          return r.json();
+        })
+        .then((data) => {
+          files = data;
+          document.getElementById("authContainer").style.display = "none";
+          document.getElementById("dashboard").style.display = "flex";
+
+          renderFileList();
+          populateMetadataKeys();
+
+          // Select first file automatically if exists
+          if (files.length) showFile(files[0]);
+        })
+        .catch((e) => alert(e.message));
+
+      // Initialize JSON Editor
+      if (!jsonEditor) {
         const container = document.getElementById("jsonEditor");
         jsonEditor = new JSONEditor(container, {
-          mode: 'tree',
-          modes: ['code', 'form', 'text', 'tree', 'view'],
-          onError: err => alert(err.toString())
+          mode: "tree",
+          modes: ["code", "form", "text", "tree", "view"],
+          onError: function (err) {
+            alert(err.toString());
+          },
         });
-      })
-      .catch(() => alert("Auth failed"));
-  }
-
-  function handleSearch(e) {
-    e.preventDefault();
-    const key = document.getElementById("searchKey").value;
-    const value = document.getElementById("searchValue").value;
-    const valueType = document.getElementById("searchType").value;
-    const limit = document.getElementById("searchLimit").value;
-    const apiKey = document.getElementById("apiKeyInput").value;
-
-    const query = new URLSearchParams();
-    if (key) query.append("key", key);
-    if (value) query.append("value", value);
-    if (valueType) query.append("value_type", valueType);
-    if (limit) query.append("limit", limit);
-
-    fetch(`/records?${query.toString()}`, { headers: { "x-api-key": apiKey } })
-      .then(r => r.json())
-      .then(data => {
-        files = data;
-        const ul = document.getElementById("list");
-        ul.innerHTML = "";
-        data.forEach(f => {
-          const li = document.createElement("li");
-          li.className = "list-group-item";
-          li.textContent = f.file_name || f.id;
-          li.onclick = () => showFile(f);
-          ul.appendChild(li);
-        });
-      })
-      .catch(err => alert("Search failed: " + err.message));
-  }
-
-  function showFile(f) {
-    current = f;
-    document.getElementById("image").src = f.file_url;
-    jsonEditor.set(f.metadata || {});
-    const info = document.getElementById("info");
-    info.innerHTML = "";
-    ["id", "ttl_seconds", "upload_time", "created_at", "updated_at"].forEach(k => {
-      const div = document.createElement("div");
-      div.className = "readonly";
-      div.innerHTML = `<strong>${k}</strong>: ${f[k]}`;
-      info.appendChild(div);
-    });
-  }
-
-  function saveMetadata() {
-    const key = document.getElementById("apiKeyInput").value;
-    try {
-      const parsed = jsonEditor.get();
-      fetch(`/records/${current.id}/metadata`, {
-        method: "PUT",
-        headers: {
-          "x-api-key": key,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ metadata: parsed })
-      }).then(() => alert("Saved!"));
-    } catch (e) {
-      alert("Invalid JSON: " + e.message);
+      }
     }
-  }
 
-  function toggleColumn(id) {
-    const wrapper = document.getElementById(id);
-    wrapper.classList.toggle("collapsed");
-  }
-</script>
+    // Render file list in left panel
+    function renderFileList() {
+      const ul = document.getElementById("list");
+      ul.innerHTML = "";
+      files.forEach((f) => {
+        const li = document.createElement("li");
+        li.textContent = f.file_name || f.id;
+        li.classList.toggle("active", current && current.id === f.id);
+        li.onclick = () => showFile(f);
+        ul.appendChild(li);
+      });
+    }
+
+    // Show file preview and metadata
+    function showFile(f) {
+      current = f;
+      renderFileList(); // update active item highlight
+      document.getElementById("image").src = f.file_url || "";
+      jsonEditor.set(f.metadata || {});
+
+      const infobox = document.getElementById("info");
+      infobox.innerHTML = "";
+      ["id", "ttl_seconds", "upload_time", "created_at", "updated_at"].forEach((k) => {
+        if (f[k] !== undefined) {
+          const div = document.createElement("div");
+          div.textContent = `${k}: ${f[k]}`;
+          infobox.appendChild(div);
+        }
+      });
+    }
+
+    // Save edited metadata back to server
+    function saveMetadata() {
+      if (!current) {
+        alert("No file selected");
+        return;
+      }
+      const key = document.getElementById("apiKeyInput").value.trim();
+      if (!key) {
+        alert("Please enter API key");
+        return;
+      }
+      try {
+        const updatedMetadata = jsonEditor.get();
+        fetch(`/records/${current.id}/metadata`, {
+          method: "PUT",
+          headers: {
+            "x-api-key": key,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ metadata: updatedMetadata }),
+        }).then((res) => {
+          if (!res.ok) throw new Error("Failed to save metadata");
+          alert("Metadata saved successfully");
+        });
+      } catch (e) {
+        alert("Invalid JSON data: " + e.message);
+      }
+    }
+
+    // Search with form inputs
+    function handleSearch(event) {
+      event.preventDefault();
+
+      const key = document.getElementById("searchKey").value.trim();
+      const value = document.getElementById("searchValue").value.trim();
+      const value_type = document.getElementById("searchType").value;
+      const limitRaw = document.getElementById("searchLimit").value.trim();
+      const limit = limitRaw ? Number(limitRaw) : 50;
+
+      if (limit < 1 || limit > 1000) {
+        alert("Limit must be between 1 and 1000");
+        return;
+      }
+
+      const apiKey = document.getElementById("apiKeyInput").value.trim();
+      if (!apiKey) {
+        alert("Please enter API key");
+        return;
+      }
+
+      const params = new URLSearchParams();
+      if (key) params.append("key", key);
+      if (value) params.append("value", value);
+      if (value_type) params.append("value_type", value_type);
+      if (limit) params.append("limit", limit);
+
+      fetch(`/records?${params.toString()}`, {
+        headers: {
+          "x-api-key": apiKey,
+        },
+      })
+        .then((r) => {
+          if (!r.ok) throw new Error("Search failed");
+          return r.json();
+        })
+        .then((data) => {
+          files = data;
+          renderFileList();
+          populateMetadataKeys();
+          if (files.length) showFile(files[0]);
+          else {
+            current = null;
+            document.getElementById("image").src = "";
+            jsonEditor.set({});
+            document.getElementById("info").innerHTML = "";
+          }
+        })
+        .catch((err) => alert(err.message));
+    }
+
+    // Populate the datalist for search key autocomplete from metadata keys
+    function populateMetadataKeys() {
+      const keySet = new Set();
+      files.forEach((file) => {
+        if (file.metadata && typeof file.metadata === "object") {
+          Object.keys(file.metadata).forEach((k) => keySet.add(k));
+        }
+      });
+      const datalist = document.getElementById("metadataKeys");
+      datalist.innerHTML = "";
+      keySet.forEach((key) => {
+        const option = document.createElement("option");
+        option.value = key;
+        datalist.appendChild(option);
+      });
+    }
+
+    // Toggle column visibility and adjust widths of visible columns
+    function toggleColumn(panelId) {
+      const toggledPanel = document.getElementById(panelId);
+      toggledPanel.classList.toggle("hidden");
+
+      // Update toggle icon
+      const iconSpan = toggledPanel.querySelector(".panel-header span");
+      if (toggledPanel.classList.contains("hidden")) {
+        iconSpan.innerHTML = "&#x25B6;"; // right-pointing triangle ▶
+      } else {
+        iconSpan.innerHTML = "&#x25C0;"; // left-pointing triangle ◀
+      }
+
+      // Count visible panels
+      const visiblePanels = panelIds.filter((id) => !document.getElementById(id).classList.contains("hidden"));
+
+      // Adjust widths based on how many visible
+      if (visiblePanels.length === 0) {
+        // All hidden, show all again
+        panelIds.forEach((id) => {
+          const p = document.getElementById(id);
+          p.classList.remove("hidden");
+          const icon = p.querySelector(".panel-header span");
+          icon.innerHTML = "&#x25C0;";
+        });
+        setPanelWidths([0.25, 0.4, 0.35]);
+      } else if (visiblePanels.length === 1) {
+        setPanelWidths([1, 0, 0], visiblePanels);
+      } else if (visiblePanels.length === 2) {
+        // Split equally between two
+        setPanelWidths([0.5, 0.5, 0], visiblePanels);
+      } else {
+        // All three visible
+        setPanelWidths([0.25, 0.4, 0.35]);
+      }
+    }
+
+    // Helper to set widths of panels given a fractional array and optionally which ones to assign
+    function setPanelWidths(widths, visiblePanels = null) {
+      if (!visiblePanels) {
+        // assign in order files, preview, metadata
+        visiblePanels = panelIds;
+      }
+      panelIds.forEach((id, idx) => {
+        const p = document.getElementById(id);
+        if (visiblePanels.includes(id)) {
+          p.style.width = (widths[idx] * 100).toFixed(2) + "%";
+          p.style.minWidth = "250px";
+        } else {
+          p.style.width = "0";
+          p.style.minWidth = "0";
+        }
+      });
+    }
+  </script>
 </body>
 </html>

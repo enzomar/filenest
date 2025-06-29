@@ -25,6 +25,9 @@ install:  ## Create venv and install dependencies
 run:  ## Run FastAPI locally using uvicorn (venv required)
 	@$(ACTIVATE) && cd backend && ENV=dev uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
+unittest:  ## Run unit tests using pytest (venv required)
+	@$(ACTIVATE) && pytest
+
 docker:  ## Run the app using docker-compose
 	@docker-compose up
 

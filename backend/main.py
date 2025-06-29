@@ -12,9 +12,9 @@ from typing import Optional, Dict, Any
 import aiofiles
 from fastapi import (
     FastAPI, UploadFile, File, Form, HTTPException, Path,
-    Security, status, Request, Depends, Query, FileResponse as FastAPIQuery
+    Security, status, Request, Depends, Query as FastAPIQuery
 )
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware

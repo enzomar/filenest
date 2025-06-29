@@ -127,7 +127,7 @@
     let current = null;
     function loadData() {
       const key = document.getElementById("apiKeyInput").value;
-      fetch("/records?key=published&value=false", {
+      fetch("/records/", {
         headers: { "x-api-key": key }
       }).then(r => r.json()).then(data => {
         files = data;

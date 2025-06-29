@@ -14,18 +14,25 @@ from fastapi import (
     FastAPI, UploadFile, File, Form, HTTPException, Path,
     Security, status, Request, Depends, Query as FastAPIQuery
 )
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, conint 
 from pydantic_settings import BaseSettings
 from tinydb import TinyDB, Query
 
+import psutil
+import shutil
 
 # --------------
 # Settings
 # --------------
+
+IS_DEV = os.environ.get("ENV", "").lower() == "dev"
+ENV_FILE_PATH = "../.env" if IS_DEV else ".env"
+
 
 class Settings(BaseSettings):
     API_KEY: str = "supersecretapikey"
@@ -36,10 +43,11 @@ class Settings(BaseSettings):
     CLEANUP_INTERVAL_SEC: int = 60
     MAX_TTL_SECONDS: int = 60 * 60 * 24 * 30  # 30 days TTL
     DEFAULT_TTL_SECONDS: int = 60 * 60  # 1 hour default TTL
-    CORS_ORIGINS: list[str] = ["https://yourfrontend.domain"]
+    CORS_ORIGINS: list[str] = ["http://localhost:8000"]
 
     class Config:
-        env_file = ".env"
+        env_file = ENV_FILE_PATH
+
 
 settings = Settings()
 
@@ -49,6 +57,7 @@ settings = Settings()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("filenest")
+logger.info(f"{settings}")
 
 # --------------
 # Database Setup (TinyDB)
@@ -75,6 +84,8 @@ app.add_middleware(
 os.makedirs(settings.STORAGE_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/files", StaticFiles(directory=settings.STORAGE_DIR), name="files")
+
+
 
 # --------------
 # Security
@@ -289,9 +300,52 @@ def health_check():
         logger.error(f"Healthcheck failed: {e}")
         raise HTTPException(status_code=500, detail="TinyDB connection failed")
 
+@app.get("/status", tags=["Monitoring"])
+def system_status():
+    # Disk usage
+    disk_usage = shutil.disk_usage(settings.STORAGE_DIR)
+    
+    # Memory and CPU
+    mem = psutil.virtual_memory()
+    cpu = psutil.cpu_percent(interval=0.5)
+
+    # File and DB stats
+    num_files = sum(len(files) for _, _, files in os.walk(settings.STORAGE_DIR))
+    num_records = len(FileTable)
+
+    return {
+        "cpu_percent": cpu,
+        "memory": {
+            "total": mem.total,
+            "available": mem.available,
+            "used": mem.used,
+            "percent": mem.percent
+        },
+        "disk": {
+            "total": disk_usage.total,
+            "used": disk_usage.used,
+            "free": disk_usage.free,
+            "percent": round(disk_usage.used / disk_usage.total * 100, 2)
+        },
+        "storage": {
+            "files_count": num_files,
+            "storage_dir": settings.STORAGE_DIR
+        },
+        "database": {
+            "records_count": num_records,
+            "db_path": settings.DB_PATH
+        }
+    }
+
 @app.get("/admin", tags=["Admin"])
 def serve_admin():
     return FileResponse("static/admin.html")
+
+
+@app.get("/", response_class=HTMLResponse)
+async def get_dashboard(request: Request):
+    """Render dashboard page"""
+    return templates.TemplateResponse("dashboard.html", {"request": request})
 
 # --------------
 # Background Task

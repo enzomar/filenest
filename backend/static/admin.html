@@ -2,137 +2,453 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FileNest Admin Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
 
   <style>
+    /* Light mode (default) */
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f8f9fa;
+      background-color: #f0f2f5;
       margin: 0;
+      color: #333;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     header {
-      background-color: #343a40;
-      color: white;
+      background-color: #2c3e50;
+      color: #ecf0f1;
       padding: 1rem;
       text-align: center;
-      font-size: 1.5rem;
-      font-weight: bold;
+      font-size: 1.8rem;
+      font-weight: 700;
+      user-select: none;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
+      position: relative;
+    }
+
+    /* Dark mode styles */
+    body.dark-mode {
+      background-color: #121212;
+      color: #ddd;
+    }
+    body.dark-mode header {
+      background-color: #1f2937;
+      color: #ddd;
+      box-shadow: 0 2px 6px rgb(255 255 255 / 0.1);
     }
 
     .dashboard {
       display: flex;
       height: 100vh;
       overflow: hidden;
+      gap: 1rem;
+      padding: 1rem;
+      box-sizing: border-box;
+      background: #e9ecef;
+      transition: background-color 0.3s ease;
+    }
+    body.dark-mode .dashboard {
+      background: #181a1f;
     }
 
     .panel-wrapper {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 15px rgb(0 0 0 / 0.1);
       display: flex;
       flex-direction: column;
       transition: all 0.3s ease;
       position: relative;
       min-width: 40px;
-    }
-
-    .panel-wrapper.collapsed {
-      flex: 0 0 40px !important;
       overflow: hidden;
+    }
+    body.dark-mode .panel-wrapper {
+      background: #22262e;
+      box-shadow: 0 8px 20px rgb(255 255 255 / 0.05);
+    }
+    .panel-wrapper.collapsed {
+      flex: 0 0 48px !important;
     }
 
     .panel-header {
-      background: #dee2e6;
-      padding: 0.75rem 1rem;
-      font-weight: bold;
+      background: #3498db;
+      color: white;
+      padding: 1rem 1.25rem;
+      font-weight: 700;
       cursor: pointer;
       user-select: none;
-      border-bottom: 1px solid #ced4da;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 1.1rem;
+      border-radius: 12px 12px 0 0;
+      box-shadow: inset 0 -2px 0 rgb(255 255 255 / 0.15);
+      transition: background-color 0.3s ease;
+    }
+    body.dark-mode .panel-header {
+      background: #2563eb;
+      box-shadow: inset 0 -2px 0 rgb(255 255 255 / 0.2);
+    }
+    .panel-header:hover {
+      background-color: #2980b9;
+    }
+    body.dark-mode .panel-header:hover {
+      background-color: #1e40af;
     }
 
     .panel-wrapper.collapsed .panel-header {
       writing-mode: vertical-rl;
       transform: rotate(180deg);
       text-align: center;
-      padding: 1rem 0.2rem;
+      padding: 1rem 0.5rem;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      justify-content: center;
     }
 
-    .readonly {
-      background-color: #f1f3f5;
-      padding: 0.5rem;
-      border-radius: 5px;
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
+    .panel-content {
+      padding: 1rem 1.25rem;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
 
-    img {
-      max-width: 100%;
+    #list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex-grow: 1;
+      overflow-y: auto;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      background: #fafafa;
+      box-shadow: inset 0 2px 5px rgb(0 0 0 / 0.03);
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    body.dark-mode #list {
+      background: #2b2f3a;
+      border-color: #444a59;
+      box-shadow: inset 0 2px 5px rgb(255 255 255 / 0.05);
+    }
+
+    .list-group-item {
+      padding: 0.5rem 0.75rem;
+      font-weight: 500;
+      border: none;
+      border-bottom: 1px solid #e2e6ea;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      user-select: none;
+      border-radius: 6px;
+      margin: 0.25rem 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      background: transparent;
+    }
+    body.dark-mode .list-group-item {
+      border-bottom: 1px solid #444a59;
+      color: #ddd;
+    }
+    .list-group-item:hover, .list-group-item:focus {
+      background-color: #dbeeff;
+      outline: none;
+    }
+    body.dark-mode .list-group-item:hover,
+    body.dark-mode .list-group-item:focus {
+      background-color: #3b82f6;
+      color: white;
+      outline: none;
+    }
+
+    .file-icon {
+      flex-shrink: 0;
+      font-size: 1.35rem;
+      color: #3498db;
+      user-select: none;
+      transition: color 0.3s ease;
+    }
+    body.dark-mode .file-icon {
+      color: #60a5fa;
+    }
+
+    #image {
+      border-radius: 12px;
       max-height: 60vh;
       object-fit: contain;
       border: 1px solid #ccc;
-      border-radius: 10px;
       background: #fff;
+      width: 100%;
+      box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+      transition: border-color 0.3s ease, background-color 0.3s ease;
+    }
+    body.dark-mode #image {
+      border-color: #444a59;
+      background: #1e293b;
     }
 
     #jsonEditor {
-      height: 300px;
+      height: 280px;
+      border-radius: 8px;
+      box-shadow: inset 0 1px 5px rgb(0 0 0 / 0.1);
+      transition: box-shadow 0.3s ease;
+    }
+    body.dark-mode #jsonEditor {
+      box-shadow: inset 0 1px 5px rgb(255 255 255 / 0.1);
+      background: #22262e;
+      color: #ddd;
+    }
+
+    button {
+      border-radius: 6px;
+      font-weight: 600;
+      box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    button:hover {
+      box-shadow: 0 6px 14px rgb(0 0 0 / 0.15);
+      transform: translateY(-2px);
+    }
+    button:focus-visible {
+      outline: 2px solid #3498db;
+      outline-offset: 2px;
+    }
+
+    .readonly {
+      background-color: #f7f9fc;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      margin-bottom: 0.6rem;
+      font-size: 0.95rem;
+      box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.07);
+      user-select: text;
+      word-break: break-word;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    body.dark-mode .readonly {
+      background-color: #1e293b;
+      box-shadow: inset 0 1px 3px rgb(255 255 255 / 0.07);
+      color: #ddd;
+    }
+
+    .readonly strong {
+      color: #2c3e50;
+      margin-right: 0.75rem;
+      flex-shrink: 0;
+      transition: color 0.3s ease;
+    }
+    body.dark-mode .readonly strong {
+      color: #60a5fa;
+    }
+
+    .copy-url-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      padding: 0.3rem 0.6rem;
+      background: #3498db;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
+      user-select: none;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .copy-url-btn:hover {
+      background-color: #2980b9;
+      transform: scale(1.05);
+    }
+    .copy-url-btn:active {
+      transform: scale(0.95);
+    }
+    body.dark-mode .copy-url-btn {
+      background: #2563eb;
+      box-shadow: 0 2px 6px rgb(255 255 255 / 0.15);
+      color: white;
+    }
+    body.dark-mode .copy-url-btn:hover {
+      background-color: #1e40af;
+    }
+
+    .download-link {
+      font-weight: 600;
+      color: #2c3e50;
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+      transition: border-color 0.3s ease;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .download-link:hover {
+      border-color: #3498db;
+      text-decoration: none;
+      color: #3498db;
+    }
+    body.dark-mode .download-link {
+      color: #60a5fa;
+    }
+    body.dark-mode .download-link:hover {
+      color: #93c5fd;
+      border-color: #60a5fa;
+    }
+
+    /* Search form tweaks */
+    #searchForm .form-control, #searchForm .form-select {
+      height: 44px;
+      font-size: 0.95rem;
+    }
+
+    #searchForm button {
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 0.5rem 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      .dashboard {
+        flex-direction: column;
+        height: auto;
+      }
+      .panel-wrapper {
+        flex: 1 1 auto !important;
+        min-width: auto !important;
+        max-height: 400px;
+        margin-bottom: 1rem;
+      }
+      .panel-wrapper.collapsed {
+        flex: 0 0 auto !important;
+        max-height: 48px;
+      }
+      #image {
+        max-height: 40vh;
+      }
+    }
+
+    /* Dark mode toggle button */
+    #darkModeToggle {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      border: none;
+      background: transparent;
+      color: white;
+      font-size: 1.4rem;
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.3s ease;
+      z-index: 10;
+    }
+    #darkModeToggle:hover, #darkModeToggle:focus {
+      color: #93c5fd;
+      outline: none;
+    }
+
+    /* Image info below preview */
+    #imageInfo {
+      margin-top: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: #e7f0ff;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #2563eb;
+      box-shadow: 0 3px 8px rgb(37 99 235 / 0.3);
+      user-select: none;
+      display: none;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    body.dark-mode #imageInfo {
+      background: #1e40af;
+      color: #bfdbfe;
+      box-shadow: 0 3px 8px rgb(191 219 254 / 0.4);
     }
   </style>
 </head>
 <body>
-<header>📁 FileNest Admin Dashboard</header>
+<header>
+  📁 FileNest Admin Dashboard
+  <button id="darkModeToggle" aria-label="Toggle dark mode" title="Toggle dark mode" tabindex="0">🌙</button>
+</header>
+
 <div class="container mt-5" id="authContainer">
-  <div class="card mx-auto" style="max-width: 400px;">
+  <div class="card mx-auto shadow-sm" style="max-width: 400px;">
     <div class="card-body text-center">
-      <h5 class="card-title">Enter Admin API Key</h5>
-      <input type="password" id="apiKeyInput" class="form-control mb-3" placeholder="API Key" />
-      <button class="btn btn-success w-100" onclick="loadData()">Login</button>
+      <h5 class="card-title mb-4">Enter Admin API Key</h5>
+      <input type="password" id="apiKeyInput" class="form-control mb-4" placeholder="API Key" autocomplete="off" />
+      <button class="btn btn-primary w-100" onclick="loadData()" aria-label="Login to dashboard">Login</button>
     </div>
   </div>
 </div>
 
-<main class="dashboard d-none" id="dashboard">
+<main class="dashboard d-none" id="dashboard" role="main" aria-label="FileNest admin dashboard">
   <section class="panel-wrapper border-end" id="filesWrapper" style="flex: 0 0 25%;">
-    <div class="panel-header" onclick="toggleColumn('filesWrapper')">📁 Files</div>
-    <div class="p-3 overflow-auto">
-      <form id="searchForm" onsubmit="handleSearch(event)" class="mb-3">
+    <div class="panel-header" onclick="toggleColumn('filesWrapper')" role="button" tabindex="0" aria-expanded="true" aria-controls="list">
+      📁 Files <i class="bi bi-chevron-down"></i>
+    </div>
+    <div class="panel-content">
+      <form id="searchForm" onsubmit="handleSearch(event)" class="mb-3" aria-label="Search files form">
         <div class="row g-2">
-          <div class="col-6"><input id="searchKey" class="form-control" placeholder="Key" /></div>
-          <div class="col-6"><input id="searchValue" class="form-control" placeholder="Value" /></div>
           <div class="col-6">
-            <select id="searchType" class="form-select">
+            <input id="searchKey" list="metadataKeys" class="form-control" placeholder="Key" aria-label="Search key" autocomplete="off" />
+            <datalist id="metadataKeys"></datalist>
+          </div>
+          <div class="col-6"><input id="searchValue" class="form-control" placeholder="Value" aria-label="Search value" autocomplete="off" /></div>
+          <div class="col-6">
+            <select id="searchType" class="form-select" aria-label="Search value type" >
               <option value="string">String</option>
               <option value="number">Number</option>
               <option value="boolean">Boolean</option>
               <option value="datetime">Datetime</option>
             </select>
           </div>
-          <div class="col-6"><input type="number" id="searchLimit" class="form-control" placeholder="Limit" min="1" max="1000" /></div>
-          <div class="col-12"><button class="btn btn-primary w-100">Search</button></div>
+          <div class="col-6"><input type="number" id="searchLimit" class="form-control" placeholder="Limit" min="1" max="1000" aria-label="Search limit" /></div>
+          <div class="col-12"><button class="btn btn-primary w-100" type="submit" aria-label="Submit search">Search</button></div>
         </div>
       </form>
-      <ul id="list" class="list-group"></ul>
+      <ul id="list" class="list-group" role="listbox" tabindex="0" aria-label="Files list"></ul>
     </div>
   </section>
 
   <section class="panel-wrapper border-end" id="previewWrapper" style="flex: 0 0 40%;">
-    <div class="panel-header" onclick="toggleColumn('previewWrapper')">🖼️ Preview</div>
-    <div class="p-3 overflow-auto">
-      <img id="image" src="" class="img-fluid" />
+    <div class="panel-header" onclick="toggleColumn('previewWrapper')" role="button" tabindex="0" aria-expanded="true" aria-controls="image">
+      🖼️ Preview <i class="bi bi-chevron-down"></i>
+    </div>
+    <div class="panel-content text-center">
+      <img id="image" src="" alt="File preview" />
+      <div id="imageInfo" aria-live="polite" aria-atomic="true" aria-label="Image information"></div>
     </div>
   </section>
 
   <section class="panel-wrapper" id="metadataWrapper" style="flex: 0 0 35%;">
-    <div class="panel-header" onclick="toggleColumn('metadataWrapper')">📝 Metadata</div>
-    <div class="p-3 overflow-auto">
-      <div id="jsonEditor"></div>
-      <button class="btn btn-success mt-3" onclick="saveMetadata()">Save</button>
+    <div class="panel-header" onclick="toggleColumn('metadataWrapper')" role="button" tabindex="0" aria-expanded="true" aria-controls="jsonEditor info">
+      📝 Metadata <i class="bi bi-chevron-down"></i>
+    </div>
+    <div class="panel-content d-flex flex-column">
+      <div id="jsonEditor" aria-label="JSON editor"></div>
+      <button class="btn btn-success mt-3 align-self-start" onclick="saveMetadata()" aria-label="Save metadata">Save</button>
       <h5 class="mt-4">Info</h5>
-      <div id="info"></div>
+      <div id="info" aria-live="polite" aria-atomic="true"></div>
     </div>
   </section>
 </main>
@@ -142,12 +458,48 @@
 <script>
   let files = [], current = null, jsonEditor = null;
 
+  // Toggle chevron icon on collapse/expand
+  function toggleChevron(icon) {
+    icon.classList.toggle('bi-chevron-down');
+    icon.classList.toggle('bi-chevron-up');
+  }
+
+  function toggleColumn(id) {
+    const wrapper = document.getElementById(id);
+    wrapper.classList.toggle("collapsed");
+    // Toggle chevron icon in header
+    const icon = wrapper.querySelector('.panel-header i.bi');
+    if (icon) toggleChevron(icon);
+  }
+
+  function updateMetadataKeysDatalist() {
+    const keysSet = new Set();
+    files.forEach(file => {
+      if (file.metadata && typeof file.metadata === 'object') {
+        Object.keys(file.metadata).forEach(k => keysSet.add(k));
+      }
+    });
+    const datalist = document.getElementById('metadataKeys');
+    datalist.innerHTML = '';
+    Array.from(keysSet).sort().forEach(key => {
+      const option = document.createElement('option');
+      option.value = key;
+      datalist.appendChild(option);
+    });
+  }
+
   function loadData() {
-    const key = document.getElementById("apiKeyInput").value;
+    const key = document.getElementById("apiKeyInput").value.trim();
+    if (!key) return alert("Please enter API Key");
     fetch("/records", { headers: { "x-api-key": key } })
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`Auth failed (status ${r.status})`);
+        return r.json();
+      })
       .then(data => {
         files = data;
+        updateMetadataKeysDatalist();
+
         document.getElementById("authContainer").classList.add("d-none");
         document.getElementById("dashboard").classList.remove("d-none");
 
@@ -156,8 +508,32 @@
         data.forEach(f => {
           const li = document.createElement("li");
           li.className = "list-group-item";
-          li.textContent = f.file_name || f.id;
+
+          // Icon for file type (image/pdf/folder/file)
+          const ext = (f.file_url || '').split('.').pop()?.toLowerCase();
+          let iconClass = 'bi-file-earmark';
+          if (['jpg','jpeg','png','gif','bmp','webp'].includes(ext)) iconClass = 'bi-file-earmark-image';
+          else if (['pdf'].includes(ext)) iconClass = 'bi-file-earmark-pdf';
+          else if (f.is_folder) iconClass = 'bi-folder';
+          // else could add other types
+
+          const icon = document.createElement('i');
+          icon.className = `file-icon bi ${iconClass}`;
+          icon.setAttribute('aria-hidden', 'true');
+
+          const url = new URL(f.file_url);
+          const filename = url.pathname.split('/').pop();
+
+          const text = document.createElement('span');
+          text.textContent = filename || f.id;
+
+          li.appendChild(icon);
+          li.appendChild(text);
+
+          li.tabIndex = 0;
+          li.setAttribute('role', 'option');
           li.onclick = () => showFile(f);
+          li.onkeypress = e => { if(e.key === 'Enter') showFile(f); };
           ul.appendChild(li);
         });
 
@@ -165,19 +541,22 @@
         jsonEditor = new JSONEditor(container, {
           mode: 'tree',
           modes: ['code', 'form', 'text', 'tree', 'view'],
-          onError: err => alert(err.toString())
+          onError: err => alert(err.toString()),
+          mainMenuBar: false
         });
       })
-      .catch(() => alert("Auth failed"));
+      .catch(e => alert(e.message));
   }
 
   function handleSearch(e) {
     e.preventDefault();
-    const key = document.getElementById("searchKey").value;
-    const value = document.getElementById("searchValue").value;
+    const key = document.getElementById("searchKey").value.trim();
+    const value = document.getElementById("searchValue").value.trim();
     const valueType = document.getElementById("searchType").value;
     const limit = document.getElementById("searchLimit").value;
-    const apiKey = document.getElementById("apiKeyInput").value;
+    const apiKey = document.getElementById("apiKeyInput").value.trim();
+
+    if (!apiKey) return alert("API Key missing");
 
     const query = new URLSearchParams();
     if (key) query.append("key", key);
@@ -186,38 +565,144 @@
     if (limit) query.append("limit", limit);
 
     fetch(`/records?${query.toString()}`, { headers: { "x-api-key": apiKey } })
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`Search failed (status ${r.status})`);
+        return r.json();
+      })
       .then(data => {
         files = data;
+        updateMetadataKeysDatalist();
+
         const ul = document.getElementById("list");
         ul.innerHTML = "";
         data.forEach(f => {
           const li = document.createElement("li");
           li.className = "list-group-item";
-          li.textContent = f.file_name || f.id;
+
+          // Icon for file type
+          const ext = (f.file_url || '').split('.').pop()?.toLowerCase();
+          let iconClass = 'bi-file-earmark';
+          if (['jpg','jpeg','png','gif','bmp','webp'].includes(ext)) iconClass = 'bi-file-earmark-image';
+          else if (['pdf'].includes(ext)) iconClass = 'bi-file-earmark-pdf';
+          else if (f.is_folder) iconClass = 'bi-folder';
+
+          const icon = document.createElement('i');
+          icon.className = `file-icon bi ${iconClass}`;
+          icon.setAttribute('aria-hidden', 'true');
+
+          const text = document.createElement('span');
+          text.textContent = f.file_name || f.id;
+
+          li.appendChild(icon);
+          li.appendChild(text);
+
+          li.tabIndex = 0;
+          li.setAttribute('role', 'option');
           li.onclick = () => showFile(f);
+          li.onkeypress = e => { if(e.key === 'Enter') showFile(f); };
           ul.appendChild(li);
         });
       })
-      .catch(err => alert("Search failed: " + err.message));
+      .catch(err => alert(err.message));
   }
 
   function showFile(f) {
     current = f;
-    document.getElementById("image").src = f.file_url;
-    jsonEditor.set(f.metadata || {});
+    const img = document.getElementById("image");
     const info = document.getElementById("info");
+    const imageInfo = document.getElementById("imageInfo");
+
+    imageInfo.style.display = 'none';
+    imageInfo.textContent = '';
+
+    if(f.file_url && /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(f.file_url)) {
+      img.src = f.file_url;
+      img.alt = `Preview of ${f.file_url}`;
+
+      // After image loads, show width, height and file size
+      img.onload = () => {
+        // Try to get file size from HEAD request
+        fetch(f.file_url, { method: 'HEAD' }).then(resp => {
+          let size = '';
+          if (resp.ok) {
+            const length = resp.headers.get('content-length');
+            if (length) {
+              const kb = (length / 1024).toFixed(1);
+              size = ` | Size: ${kb} KB`;
+            }
+          }
+          imageInfo.textContent = `Dimensions: ${img.naturalWidth} × ${img.naturalHeight}px${size}`;
+          imageInfo.style.display = 'block';
+        }).catch(() => {
+          imageInfo.textContent = `Dimensions: ${img.naturalWidth} × ${img.naturalHeight}px`;
+          imageInfo.style.display = 'block';
+        });
+      };
+      img.onerror = () => {
+        imageInfo.style.display = 'none';
+      };
+    } else {
+      img.src = '';
+      img.alt = 'No preview available';
+      imageInfo.style.display = 'none';
+    }
+
+    jsonEditor.set(f.metadata || {});
     info.innerHTML = "";
-    ["id", "ttl_seconds", "upload_time", "created_at", "updated_at"].forEach(k => {
-      const div = document.createElement("div");
-      div.className = "readonly";
-      div.innerHTML = `<strong>${k}</strong>: ${f[k]}`;
-      info.appendChild(div);
+
+    const fields = ["id", "ttl_seconds", "upload_time", "created_at", "updated_at"];
+    fields.forEach(k => {
+      if(f[k]) {
+        const div = document.createElement("div");
+        div.className = "readonly";
+        div.innerHTML = `<strong>${k}</strong> ${f[k]}`;
+        info.appendChild(div);
+      }
     });
+
+    // Download link + copy url
+    const downloadDiv = document.createElement("div");
+    downloadDiv.className = "readonly d-flex align-items-center justify-content-between gap-2";
+
+    let filename = '';
+    try {
+      filename = (new URL(f.file_url)).pathname.split('/').pop();
+    } catch {
+      filename = f.id;
+    }
+
+    const a = document.createElement('a');
+    a.href = f.file_url;
+    a.target = "_blank";
+    a.download = filename;
+    a.className = "download-link";
+    a.title = "Download file";
+    a.textContent = filename;
+
+    const btn = document.createElement("button");
+    btn.className = "copy-url-btn";
+    btn.setAttribute("aria-label", "Copy file URL to clipboard");
+    btn.innerHTML = `<i class="bi bi-clipboard"></i> Copy URL`;
+
+    btn.onclick = () => {
+      navigator.clipboard.writeText(f.file_url)
+        .then(() => {
+          btn.innerHTML = `<i class="bi bi-clipboard-check"></i> Copied!`;
+          setTimeout(() => {
+            btn.innerHTML = `<i class="bi bi-clipboard"></i> Copy URL`;
+          }, 2000);
+        })
+        .catch(() => alert("Failed to copy URL"));
+    };
+
+    downloadDiv.appendChild(a);
+    downloadDiv.appendChild(btn);
+    info.appendChild(downloadDiv);
   }
 
   function saveMetadata() {
-    const key = document.getElementById("apiKeyInput").value;
+    if (!current) return alert("Select a file first");
+    const key = document.getElementById("apiKeyInput").value.trim();
     try {
       const parsed = jsonEditor.get();
       fetch(`/records/${current.id}/metadata`, {
@@ -227,16 +712,42 @@
           "Content-Type": "application/json"
         },
         body: JSON.stringify({ metadata: parsed })
-      }).then(() => alert("Saved!"));
+      }).then(r => {
+        if (!r.ok) throw new Error(`Save failed (status ${r.status})`);
+        alert("Metadata saved!");
+      }).catch(e => alert(e.message));
     } catch (e) {
       alert("Invalid JSON: " + e.message);
     }
   }
 
-  function toggleColumn(id) {
-    const wrapper = document.getElementById(id);
-    wrapper.classList.toggle("collapsed");
+  // Dark mode toggle with persistence
+  const darkToggle = document.getElementById('darkModeToggle');
+  darkToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    updateToggleIcon();
+    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+  });
+
+  function updateToggleIcon() {
+    if(document.body.classList.contains('dark-mode')) {
+      darkToggle.textContent = '☀️';
+      darkToggle.title = 'Switch to light mode';
+      darkToggle.setAttribute('aria-label', 'Switch to light mode');
+    } else {
+      darkToggle.textContent = '🌙';
+      darkToggle.title = 'Switch to dark mode';
+      darkToggle.setAttribute('aria-label', 'Switch to dark mode');
+    }
   }
+
+  // Initialize dark mode state from localStorage
+  window.addEventListener('DOMContentLoaded', () => {
+    if(localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark-mode');
+    }
+    updateToggleIcon();
+  });
 </script>
 </body>
 </html>

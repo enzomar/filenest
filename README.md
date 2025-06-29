@@ -5,7 +5,7 @@ A lightweight, production-ready FastAPI-based file upload service with:
 - ✅ API key authentication
 - ✅ File size limit (default 10 MB)
 - ✅ Automatic file expiration via TTL (default: 1 hour)
-- ✅ SQLite or PostgreSQL metadata storage
+- ✅ TinyDB metadata storage
 - ✅ Metadata and file association via UUID
 - ✅ Static file serving
 - ✅ Background cleanup task

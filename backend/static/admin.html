@@ -329,33 +329,49 @@
     }
 
     // Save edited metadata back to server
-    function saveMetadata() {
-      if (!current) {
-        alert("No file selected");
-        return;
-      }
-      const key = document.getElementById("apiKeyInput").value.trim();
-      if (!key) {
-        alert("Please enter API key");
-        return;
-      }
-      try {
-        const updatedMetadata = jsonEditor.get();
-        fetch(`/records/${current.id}/metadata`, {
-          method: "PUT",
-          headers: {
-            "x-api-key": key,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ metadata: updatedMetadata }),
-        }).then((res) => {
-          if (!res.ok) throw new Error("Failed to save metadata");
-          alert("Metadata saved successfully");
+function saveMetadata() {
+  if (!current) {
+    alert("No file selected");
+    return;
+  }
+  const key = document.getElementById("apiKeyInput").value.trim();
+  if (!key) {
+    alert("Please enter API key");
+    return;
+  }
+  try {
+    const updatedMetadata = jsonEditor.get();
+    fetch(`/records/${current.id}/metadata`, {
+      method: "PUT",
+      headers: {
+        "x-api-key": key,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ metadata: updatedMetadata }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to save metadata");
+        alert("Metadata saved successfully");
+        // Reload the file metadata from server:
+        return fetch(`/records/${current.id}`, {
+          headers: { "x-api-key": key },
         });
-      } catch (e) {
-        alert("Invalid JSON data: " + e.message);
-      }
-    }
+      })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to reload file data");
+        return res.json();
+      })
+      .then((updatedFile) => {
+        // Update current and UI:
+        current = updatedFile;
+        showFile(updatedFile);
+      })
+      .catch((err) => alert(err.message));
+  } catch (e) {
+    alert("Invalid JSON data: " + e.message);
+  }
+}
+
 
     // Search with form inputs
     function handleSearch(event) {

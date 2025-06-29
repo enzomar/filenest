@@ -34,3 +34,8 @@ async def serve_frontend():
     if index_path.exists():
         return FileResponse(index_path)
     return {"error": "Frontend not found"}
+
+# Health check endpoint
+@app.get("/health", include_in_schema=True, tags=["Health"])
+async def health_check():
+    return {"status": "ok"}

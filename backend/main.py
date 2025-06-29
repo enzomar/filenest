@@ -12,7 +12,7 @@ from typing import Optional, Dict, Any
 import aiofiles
 from fastapi import (
     FastAPI, UploadFile, File, Form, HTTPException, Path,
-    Security, status, Request, Depends, Query as FastAPIQuery
+    Security, status, Request, Depends, Query, FileResponse as FastAPIQuery
 )
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles

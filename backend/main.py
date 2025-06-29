@@ -105,8 +105,12 @@ async def save_file_bytes(file_path: str, file_bytes: bytes):
 
 async def write_uploadfile_to_disk(file: UploadFile, file_path: str):
     size = 0
+    await file.seek(0)  # Move pointer to beginning
     async with aiofiles.open(file_path, "wb") as out_file:
-        while chunk := await file.read(1024 * 1024):
+        while True:
+            chunk = await file.read(1024 * 1024)
+            if not chunk:
+                break
             size += len(chunk)
             if size > settings.MAX_FILE_SIZE:
                 raise HTTPException(413, "File too large")

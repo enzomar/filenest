@@ -196,8 +196,8 @@ def get_metadata(
 @app.get("/records")
 def search_metadata(
     request: Request,
-    key: str = FastAPIQuery(..., description="Metadata key to search for"),
-    value: str = FastAPIQuery(..., description="Value to match"),
+    key: Optional[str] = FastAPIQuery(None, description="Metadata key to search for"),
+    value: Optional[str] = FastAPIQuery(None, description="Value to match"),
     value_type: str = FastAPIQuery("string", regex="^(string|boolean|number|datetime)$", description="Type of the value"),
     limit: int = FastAPIQuery(50, ge=1, le=1000, description="Maximum number of records to return"),
     api_key: str = Security(get_api_key)
@@ -217,29 +217,33 @@ def search_metadata(
 
     results = []
     for record in FileTable.all():
-        meta = record.get("metadata", {})
-        val = meta.get(key)
-        if val is None:
-            continue
+        if key and value is not None:
+            meta = record.get("metadata", {})
+            val = meta.get(key)
+            if val is None:
+                continue
 
-        try:
-            val_casted = cast_value(str(val), value_type)
-            value_casted = cast_value(value, value_type)
-        except Exception:
-            continue
+            try:
+                val_casted = cast_value(str(val), value_type)
+                value_casted = cast_value(value, value_type)
+            except Exception:
+                continue
 
-        if val_casted == value_casted:
-            results.append({
-                "id": record["id"],
-                "file_url": f"{request.base_url}files/{record['filename']}",
-                "metadata": record.get("metadata"),
-                "ttl_seconds": record.get("ttl_seconds"),
-                "upload_time": record.get("upload_time"),
-                "created_at": record.get("created_at"),
-                "updated_at": record.get("updated_at"),
-            })
-            if len(results) >= limit:
-                break
+            if val_casted != value_casted:
+                continue
+
+        results.append({
+            "id": record["id"],
+            "file_url": f"{request.base_url}files/{record['filename']}",
+            "metadata": record.get("metadata"),
+            "ttl_seconds": record.get("ttl_seconds"),
+            "upload_time": record.get("upload_time"),
+            "created_at": record.get("created_at"),
+            "updated_at": record.get("updated_at"),
+        })
+
+        if len(results) >= limit:
+            break
 
     return results
 

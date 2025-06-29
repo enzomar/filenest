@@ -34,7 +34,8 @@ services:
     volumes:
       - ./storage:/app/storage:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./backend:/app/backend:ro
+      - ./backend/static:/app/static:ro  # This is the key!
+
 
     depends_on:
       backend:

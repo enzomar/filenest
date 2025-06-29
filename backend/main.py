@@ -73,6 +73,7 @@ app.add_middleware(
 )
 
 os.makedirs(settings.STORAGE_DIR, exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/files", StaticFiles(directory=settings.STORAGE_DIR), name="files")
 
 # --------------
@@ -283,6 +284,10 @@ def health_check():
     except Exception as e:
         logger.error(f"Healthcheck failed: {e}")
         raise HTTPException(status_code=500, detail="TinyDB connection failed")
+
+@app.get("/admin", tags=["Admin"])
+def serve_admin():
+    return FileResponse("static/admin.html")
 
 # --------------
 # Background Task

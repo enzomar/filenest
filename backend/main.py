@@ -342,10 +342,6 @@ def serve_admin():
     return FileResponse("static/admin.html")
 
 
-@app.get("/", response_class=HTMLResponse)
-async def get_dashboard(request: Request):
-    """Render dashboard page"""
-    return templates.TemplateResponse("dashboard.html", {"request": request})
 
 # --------------
 # Background Task

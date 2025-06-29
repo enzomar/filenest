@@ -4,6 +4,7 @@ import aiofiles
 from datetime import datetime
 from tinydb import TinyDB, Query
 from settings import settings
+import asyncio
 
 # Ensure storage and DB directories exist
 os.makedirs(settings.STORAGE_DIR, exist_ok=True)
@@ -161,23 +162,28 @@ def search_metadata(bucket: str, key: str | None = None, value: str | None = Non
             break
     return results
 
-import asyncio
-import os
+
 
 async def cleanup_expired_files(bucket: str):
     """Delete expired files and their metadata in a bucket."""
     table = get_bucket_table(bucket)
-    records = table.all()
-    to_delete = []
+    File = Query()
+    
+    # Collect expired records
+    expired_records = [r for r in table.all() if is_expired(r)]
 
-    for record in records:
-        if is_expired(record):
-            to_delete.append(record)
+    for record in expired_records:
+        file_path = get_object_path(bucket, record.get("filename"))
+        
+        # Delete file if it exists
+        if file_path and os.path.isfile(file_path):
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                print(f"[ERROR] Failed to remove file {file_path}: {e}")
 
-    for record in to_delete:
-        file_path = get_object_path(bucket, record['filename'])
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        table.remove(Query().id == record['id'])
+        # Remove metadata
+        if "id" in record:
+            table.remove(File.id == record["id"])
 
 

@@ -19,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(filenest_router, prefix="/api")
+app.include_router(filenest_router)
 # app.include_router(s3_router, prefix="/api")
 
 @app.get("/health", include_in_schema=False)
@@ -27,14 +27,10 @@ async def health_check():
     return {"status": "ok"}
 
 # Serve frontend only in development
-if settings.DEBUG.lower() == "true":
-    FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+if settings.ENV.lower() == "dev":
 
-    app.mount("/static", StaticFiles(directory=FRONTEND_DIR / "static"), name="static")
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
     @app.get("/", include_in_schema=False)
     async def serve_frontend():
-        index_path = FRONTEND_DIR / "index.html"
-        if index_path.exists():
-            return FileResponse(index_path)
-        return {"error": "Frontend not found"}
+        return FileResponse("static/index.html")

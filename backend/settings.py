@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     DB_PATH: str = "./data/file_metadata.json"
     CORS_ORIGINS: list[str] = ["http://localhost:8000"]
     ENV: str = ENV  # Include ENV if you want to access it from settings later
-
+    DEBUG: str = "false"
     class Config:
         env_file = "../.env" if ENV == "dev" else ".env"
 

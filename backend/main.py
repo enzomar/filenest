@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-import os
+
 
 from settings import settings
 from api_filnest import router as filenest_router
@@ -27,7 +27,7 @@ async def health_check():
     return {"status": "ok"}
 
 # Serve frontend only in development
-if os.getenv("DEBUG", "false").lower() == "true":
+if settings.DEBUG.lower() == "true":
     FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR / "static"), name="static")

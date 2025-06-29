@@ -1,521 +1,242 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FileNest Admin Dashboard</title>
-  <!-- Bootstrap CSS CDN -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
-  <link
-    href="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.css"
-    rel="stylesheet"
-  />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.css" rel="stylesheet" />
+
   <style>
     body {
-      background-color: #f4f4f4;
-      color: #333;
-      height: 100vh;
-      overflow: hidden;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    header {
-      background-color: #2c3e50;
-      color: #ecf0f1;
-      padding: 1rem;
-      text-align: center;
-      font-weight: bold;
-      font-size: 1.5rem;
-      user-select: none;
-    }
-
-    #authContainer {
-      max-width: 400px;
-      margin: 100px auto;
-      padding: 2rem;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      text-align: center;
-    }
-
-    /* Main dashboard grid */
-    #dashboard {
-      display: flex;
-      height: calc(100vh - 60px);
-      overflow: hidden;
-    }
-
-    /* Panels */
-    .panel {
-      display: flex;
-      flex-direction: column;
-      border: 1px solid #ced4da;
-      background: white;
-      transition: width 0.3s ease;
-      overflow: hidden;
-      position: relative;
-      /* Min width for collapsed */
-      min-width: 50px;
-      max-width: 100%;
-    }
-
-    .panel.expanded {
-      min-width: auto;
-      flex-grow: 1;
-      max-width: none;
-    }
-
-    /* Specific widths when expanded */
-    #filesPanelWrapper.expanded {
-      width: 25%;
-      min-width: 250px;
-    }
-    #previewPanelWrapper.expanded {
-      width: 40%;
-      min-width: 350px;
-    }
-    #metadataPanelWrapper.expanded {
-      width: 35%;
-      min-width: 300px;
-    }
-
-    /* Panel headers */
-    .panel-header {
-      background: #ecf0f1;
-      padding: 0.75rem 1rem;
-      font-weight: 600;
-      cursor: default;
-      user-select: none;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid #ced4da;
-      white-space: nowrap;
-    }
-
-    /* Toggle button */
-    .toggle-btn {
-      background: transparent;
-      border: none;
-      font-size: 1.25rem;
-      cursor: pointer;
-      user-select: none;
-      padding: 0 5px;
-      color: #495057;
-      transition: color 0.2s ease;
-    }
-    .toggle-btn:hover {
-      color: #212529;
-    }
-
-    /* Hide text in collapsed panels */
-    .panel.collapsed .panel-body,
-    .panel.collapsed .search-form {
-      display: none;
-    }
-    /* In collapsed, header text hides leaving only toggle button */
-    .panel.collapsed .panel-header > span.panel-title {
-      display: none;
-    }
-
-    /* Panel content */
-    .panel-body {
-      padding: 1rem;
-      overflow-y: auto;
-      height: 100%;
-    }
-
-    /* Search form styling */
-    .search-form {
-      padding-bottom: 1rem;
-      border-bottom: 1px solid #dee2e6;
-    }
-
-    /* File list styling */
-    #fileList {
-      list-style: none;
-      padding: 0;
+      background-color: #f8f9fa;
       margin: 0;
     }
 
-    #fileList li {
-      background: #f8f9fa;
-      border-radius: 5px;
-      margin-bottom: 0.5rem;
-      padding: 0.5rem 0.75rem;
+    header {
+      background-color: #343a40;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .dashboard {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .panel-wrapper {
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+      position: relative;
+      min-width: 40px;
+    }
+
+    .panel-wrapper.collapsed {
+      flex: 0 0 40px !important;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      background: #dee2e6;
+      padding: 0.75rem 1rem;
+      font-weight: bold;
       cursor: pointer;
-      transition: background-color 0.2s ease;
       user-select: none;
+      border-bottom: 1px solid #ced4da;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
     }
 
-    #fileList li:hover,
-    #fileList li.active {
-      background-color: #e9ecef;
-    }
-
-    /* Image styling */
-    #previewImage {
-      width: 100%;
-      max-height: 75vh;
-      object-fit: contain;
-      border-radius: 10px;
-      border: 1px solid #ced4da;
-      background: white;
-      user-select: none;
-    }
-
-    /* Info section */
-    #info {
-      margin-top: 1rem;
-      font-size: 0.9rem;
+    .panel-wrapper.collapsed .panel-header {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      text-align: center;
+      padding: 1rem 0.2rem;
     }
 
     .readonly {
-      background-color: #f0f0f0;
+      background-color: #f1f3f5;
+      padding: 0.5rem;
       border-radius: 5px;
-      padding: 0.4rem 0.75rem;
       margin-bottom: 0.5rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 0.9rem;
     }
 
-    /* Save button */
-    #saveMetadataBtn {
-      margin-top: 0.75rem;
-      width: 100%;
+    img {
+      max-width: 100%;
+      max-height: 60vh;
+      object-fit: contain;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    #jsonEditor {
+      height: 300px;
     }
   </style>
 </head>
 <body>
-  <header>FileNest Admin Dashboard</header>
+<header>📁 FileNest Admin Dashboard</header>
+<div class="container mt-5" id="authContainer">
+  <div class="card mx-auto" style="max-width: 400px;">
+    <div class="card-body text-center">
+      <h5 class="card-title">Enter Admin API Key</h5>
+      <input type="password" id="apiKeyInput" class="form-control mb-3" placeholder="API Key" />
+      <button class="btn btn-success w-100" onclick="loadData()">Login</button>
+    </div>
+  </div>
+</div>
 
-  <section id="authContainer">
-    <h2>Enter Admin API Key</h2>
-    <input
-      type="password"
-      id="apiKeyInput"
-      placeholder="API Key"
-      class="form-control mb-3"
-      style="max-width: 400px; margin: 0 auto"
-    />
-    <button class="btn btn-success" onclick="loadData()" style="max-width: 400px; margin: 0 auto; display: block;">
-      Login
-    </button>
+<main class="dashboard d-none" id="dashboard">
+  <section class="panel-wrapper border-end" id="filesWrapper" style="flex: 0 0 25%;">
+    <div class="panel-header" onclick="toggleColumn('filesWrapper')">📁 Files</div>
+    <div class="p-3 overflow-auto">
+      <form id="searchForm" onsubmit="handleSearch(event)" class="mb-3">
+        <div class="row g-2">
+          <div class="col-6"><input id="searchKey" class="form-control" placeholder="Key" /></div>
+          <div class="col-6"><input id="searchValue" class="form-control" placeholder="Value" /></div>
+          <div class="col-6">
+            <select id="searchType" class="form-select">
+              <option value="string">String</option>
+              <option value="number">Number</option>
+              <option value="boolean">Boolean</option>
+              <option value="datetime">Datetime</option>
+            </select>
+          </div>
+          <div class="col-6"><input type="number" id="searchLimit" class="form-control" placeholder="Limit" min="1" max="1000" /></div>
+          <div class="col-12"><button class="btn btn-primary w-100">Search</button></div>
+        </div>
+      </form>
+      <ul id="list" class="list-group"></ul>
+    </div>
   </section>
 
-  <main id="dashboard" style="display:none;">
-    <!-- Files Panel -->
-    <section id="filesPanelWrapper" class="panel expanded" aria-label="Files Panel">
-      <header class="panel-header">
-        <span class="panel-title">📁 Files</span>
-        <button class="toggle-btn" title="Toggle Files Panel" onclick="togglePanel('filesPanelWrapper')">&#10094;</button>
-      </header>
-      <div class="panel-body">
-        <form id="searchForm" class="search-form" onsubmit="handleSearch(event)">
-          <div class="row g-2">
-            <div class="col-6">
-              <input
-                type="text"
-                id="searchKey"
-                class="form-control"
-                placeholder="Key"
-                list="keySuggestions"
-                autocomplete="off"
-              />
-              <datalist id="keySuggestions"></datalist>
-            </div>
-            <div class="col-6">
-              <input
-                type="text"
-                id="searchValue"
-                class="form-control"
-                placeholder="Value"
-                autocomplete="off"
-              />
-            </div>
-            <div class="col-6">
-              <select id="searchType" class="form-select">
-                <option value="string" selected>string</option>
-                <option value="number">number</option>
-                <option value="boolean">boolean</option>
-                <option value="datetime">datetime</option>
-              </select>
-            </div>
-            <div class="col-6">
-              <input
-                type="number"
-                id="searchLimit"
-                class="form-control"
-                placeholder="Limit (default 50)"
-                min="1"
-                max="1000"
-                value="50"
-              />
-            </div>
-            <div class="col-12">
-              <button type="submit" class="btn btn-primary w-100">Search</button>
-            </div>
-          </div>
-        </form>
-        <ul id="fileList" tabindex="0" aria-label="Files list"></ul>
-      </div>
-    </section>
+  <section class="panel-wrapper border-end" id="previewWrapper" style="flex: 0 0 40%;">
+    <div class="panel-header" onclick="toggleColumn('previewWrapper')">🖼️ Preview</div>
+    <div class="p-3 overflow-auto">
+      <img id="image" src="" class="img-fluid" />
+    </div>
+  </section>
 
-    <!-- Preview Panel -->
-    <section id="previewPanelWrapper" class="panel expanded" aria-label="Preview Panel">
-      <header class="panel-header">
-        <span class="panel-title">🖼️ Preview</span>
-        <button class="toggle-btn" title="Toggle Preview Panel" onclick="togglePanel('previewPanelWrapper')">&#10094;</button>
-      </header>
-      <div class="panel-body d-flex justify-content-center align-items-center">
-        <img id="previewImage" alt="File Preview Image" />
-      </div>
-    </section>
+  <section class="panel-wrapper" id="metadataWrapper" style="flex: 0 0 35%;">
+    <div class="panel-header" onclick="toggleColumn('metadataWrapper')">📝 Metadata</div>
+    <div class="p-3 overflow-auto">
+      <div id="jsonEditor"></div>
+      <button class="btn btn-success mt-3" onclick="saveMetadata()">Save</button>
+      <h5 class="mt-4">Info</h5>
+      <div id="info"></div>
+    </div>
+  </section>
+</main>
 
-    <!-- Metadata Panel -->
-    <section id="metadataPanelWrapper" class="panel expanded" aria-label="Metadata Panel">
-      <header class="panel-header">
-        <span class="panel-title">📝 Metadata</span>
-        <button class="toggle-btn" title="Toggle Metadata Panel" onclick="togglePanel('metadataPanelWrapper')">&#10094;</button>
-      </header>
-      <div class="panel-body d-flex flex-column">
-        <div id="jsonEditor" style="flex-grow:1; min-height:300px;"></div>
-        <button
-          id="saveMetadataBtn"
-          class="btn btn-success"
-          onclick="saveMetadata()"
-          aria-label="Save Metadata"
-          type="button"
-        >
-          Save Metadata
-        </button>
-        <h5 class="mt-3">Info</h5>
-        <div id="info" aria-live="polite"></div>
-      </div>
-    </section>
-  </main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.js"></script>
+<script>
+  let files = [], current = null, jsonEditor = null;
 
-  <!-- Bootstrap Bundle with Popper -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.js"></script>
+  function loadData() {
+    const key = document.getElementById("apiKeyInput").value;
+    fetch("/records", { headers: { "x-api-key": key } })
+      .then(r => r.json())
+      .then(data => {
+        files = data;
+        document.getElementById("authContainer").classList.add("d-none");
+        document.getElementById("dashboard").classList.remove("d-none");
 
-  <script>
-    let files = [];
-    let current = null;
-    let jsonEditor = null;
+        const ul = document.getElementById("list");
+        ul.innerHTML = "";
+        data.forEach(f => {
+          const li = document.createElement("li");
+          li.className = "list-group-item";
+          li.textContent = f.file_name || f.id;
+          li.onclick = () => showFile(f);
+          ul.appendChild(li);
+        });
 
-    function togglePanel(panelId) {
-      const panel = document.getElementById(panelId);
-      const wrapper = panel;
-      // Toggle expanded/collapsed state
-      const isExpanded = wrapper.classList.contains("expanded");
-      if (isExpanded) {
-        wrapper.classList.remove("expanded");
-        wrapper.classList.add("collapsed");
-        // Change toggle icon
-        wrapper.querySelector(".toggle-btn").innerHTML = "&#10095;"; // right arrow
-      } else {
-        // Collapse other panels
-        for (const p of ["filesPanelWrapper", "previewPanelWrapper", "metadataPanelWrapper"]) {
-          if (p !== panelId) {
-            const other = document.getElementById(p);
-            other.classList.remove("expanded");
-            other.classList.add("collapsed");
-            other.querySelector(".toggle-btn").innerHTML = "&#10095;"; // right arrow
-          }
-        }
-        // Expand clicked panel
-        wrapper.classList.remove("collapsed");
-        wrapper.classList.add("expanded");
-        wrapper.querySelector(".toggle-btn").innerHTML = "&#10094;"; // left arrow
-      }
-    }
-
-    function highlightSelectedFile(id) {
-      const list = document.getElementById("fileList");
-      for (const li of list.children) {
-        if (li.dataset.id === id) {
-          li.classList.add("active");
-          li.setAttribute("aria-current", "true");
-          li.focus();
-        } else {
-          li.classList.remove("active");
-          li.removeAttribute("aria-current");
-        }
-      }
-    }
-
-    function loadData() {
-      const apiKey = document.getElementById("apiKeyInput").value.trim();
-      if (!apiKey) {
-        alert("Please enter API key");
-        return;
-      }
-      fetch("/records", {
-        headers: { "x-api-key": apiKey },
+        const container = document.getElementById("jsonEditor");
+        jsonEditor = new JSONEditor(container, {
+          mode: 'tree',
+          modes: ['code', 'form', 'text', 'tree', 'view'],
+          onError: err => alert(err.toString())
+        });
       })
-        .then((r) => {
-          if (!r.ok) throw new Error("Authentication failed");
-          return r.json();
-        })
-        .then((data) => {
-          files = data;
-          document.getElementById("authContainer").style.display = "none";
-          document.getElementById("dashboard").style.display = "flex";
+      .catch(() => alert("Auth failed"));
+  }
 
-          fillKeySuggestions(data);
-          populateFileList(data);
+  function handleSearch(e) {
+    e.preventDefault();
+    const key = document.getElementById("searchKey").value;
+    const value = document.getElementById("searchValue").value;
+    const valueType = document.getElementById("searchType").value;
+    const limit = document.getElementById("searchLimit").value;
+    const apiKey = document.getElementById("apiKeyInput").value;
 
-          // Init JSONEditor once
-          if (!jsonEditor) {
-            const container = document.getElementById("jsonEditor");
-            jsonEditor = new JSONEditor(container, {
-              mode: "tree",
-              modes: ["code", "form", "text", "tree", "view"],
-              onError: function (err) {
-                alert(err.toString());
-              },
-            });
-          }
-        })
-        .catch((err) => alert(err.message));
-    }
+    const query = new URLSearchParams();
+    if (key) query.append("key", key);
+    if (value) query.append("value", value);
+    if (valueType) query.append("value_type", valueType);
+    if (limit) query.append("limit", limit);
 
-    function fillKeySuggestions(data) {
-      const keys = new Set();
-      data.forEach((file) => {
-        if (file.metadata) {
-          Object.keys(file.metadata).forEach((k) => keys.add(k));
-        }
-      });
-      const datalist = document.getElementById("keySuggestions");
-      datalist.innerHTML = "";
-      [...keys].sort().forEach((k) => {
-        const option = document.createElement("option");
-        option.value = k;
-        datalist.appendChild(option);
-      });
-    }
+    fetch(`/records?${query.toString()}`, { headers: { "x-api-key": apiKey } })
+      .then(r => r.json())
+      .then(data => {
+        files = data;
+        const ul = document.getElementById("list");
+        ul.innerHTML = "";
+        data.forEach(f => {
+          const li = document.createElement("li");
+          li.className = "list-group-item";
+          li.textContent = f.file_name || f.id;
+          li.onclick = () => showFile(f);
+          ul.appendChild(li);
+        });
+      })
+      .catch(err => alert("Search failed: " + err.message));
+  }
 
-    function populateFileList(data) {
-      const ul = document.getElementById("fileList");
-      ul.innerHTML = "";
-      data.forEach((f) => {
-        const li = document.createElement("li");
-        li.textContent = f.file_name || f.id;
-        li.dataset.id = f.id;
-        li.tabIndex = 0;
-        li.onclick = () => showFile(f);
-        li.onkeydown = (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            showFile(f);
-          }
-        };
-        ul.appendChild(li);
-      });
-    }
+  function showFile(f) {
+    current = f;
+    document.getElementById("image").src = f.file_url;
+    jsonEditor.set(f.metadata || {});
+    const info = document.getElementById("info");
+    info.innerHTML = "";
+    ["id", "ttl_seconds", "upload_time", "created_at", "updated_at"].forEach(k => {
+      const div = document.createElement("div");
+      div.className = "readonly";
+      div.innerHTML = `<strong>${k}</strong>: ${f[k]}`;
+      info.appendChild(div);
+    });
+  }
 
-    function showFile(f) {
-      current = f;
-      highlightSelectedFile(f.id);
-      document.getElementById("previewImage").src = f.file_url || "";
-
-      jsonEditor.set(f.metadata || {});
-
-      const info = document.getElementById("info");
-      info.innerHTML = "";
-      ["id", "ttl_seconds", "upload_time", "created_at", "updated_at"].forEach((key) => {
-        if (f[key] !== undefined && f[key] !== null) {
-          const div = document.createElement("div");
-          div.className = "readonly";
-          div.textContent = `${key}: ${f[key]}`;
-          info.appendChild(div);
-        }
-      });
-    }
-
-    function saveMetadata() {
-      if (!current) {
-        alert("No file selected");
-        return;
-      }
-      const apiKey = document.getElementById("apiKeyInput").value.trim();
-      if (!apiKey) {
-        alert("Please enter API key");
-        return;
-      }
-      try {
-        const updatedMetadata = jsonEditor.get();
-        fetch(`/records/${current.id}/metadata`, {
-          method: "PUT",
-          headers: {
-            "x-api-key": apiKey,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ metadata: updatedMetadata }),
-        })
-          .then((res) => {
-            if (!res.ok) throw new Error("Failed to save metadata");
-            alert("Metadata saved successfully");
-            // Reload updated file metadata:
-            return fetch(`/records/${current.id}`, {
-              headers: { "x-api-key": apiKey },
-            });
-          })
-          .then((res) => {
-            if (!res.ok) throw new Error("Failed to reload file data");
-            return res.json();
-          })
-          .then((updatedFile) => {
-            current = updatedFile;
-            showFile(updatedFile);
-          })
-          .catch((err) => alert(err.message));
-      } catch (e) {
-        alert("Invalid JSON data: " + e.message);
-      }
-    }
-
-    function handleSearch(event) {
-      event.preventDefault();
-      const key = document.getElementById("searchKey").value.trim();
-      const value = document.getElementById("searchValue").value.trim();
-      const value_type = document.getElementById("searchType").value;
-      const limit = document.getElementById("searchLimit").value || "50";
-      const apiKey = document.getElementById("apiKeyInput").value.trim();
-
-      if (!apiKey) {
-        alert("Please enter API key");
-        return;
-      }
-
-      const query = new URLSearchParams();
-      if (key) query.append("key", key);
-      if (value) query.append("value", value);
-      if (value_type) query.append("value_type", value_type);
-      if (limit) query.append("limit", limit);
-
-      fetch(`/records?${query.toString()}`, {
+  function saveMetadata() {
+    const key = document.getElementById("apiKeyInput").value;
+    try {
+      const parsed = jsonEditor.get();
+      fetch(`/records/${current.id}/metadata`, {
+        method: "PUT",
         headers: {
-          "x-api-key": apiKey,
+          "x-api-key": key,
+          "Content-Type": "application/json"
         },
-      })
-        .then((r) => {
-          if (!r.ok) throw new Error("Search failed");
-          return r.json();
-        })
-        .then((data) => {
-          files = data;
-          populateFileList(data);
-        })
-        .catch((err) => alert(err.message));
+        body: JSON.stringify({ metadata: parsed })
+      }).then(() => alert("Saved!"));
+    } catch (e) {
+      alert("Invalid JSON: " + e.message);
     }
-  </script>
+  }
+
+  function toggleColumn(id) {
+    const wrapper = document.getElementById(id);
+    wrapper.classList.toggle("collapsed");
+  }
+</script>
 </body>
 </html>

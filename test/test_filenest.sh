@@ -31,7 +31,12 @@ log "=== Testing FileNest API with bucket: $BUCKET ==="
 # Create Bucket
 log "Creating bucket '$BUCKET'..."
 CREATE_RESP=$(http_call POST "$BASE_URL/$BUCKET" || true)
-check_response_field "$CREATE_RESP" '.error' && echo "$CREATE_RESP" && ok "Bucket already exists or handled gracefully." || ok "Bucket created."
+if check_response_field "$CREATE_RESP" '.detail' ; then
+  echo "$CREATE_RESP"
+  ok "Bucket already exists or error handled gracefully."
+else
+  ok "Bucket created."
+fi
 
 # Upload File
 log "Uploading file..."
@@ -61,7 +66,9 @@ ok "Search successful."
 
 # Update Metadata
 log "Updating metadata..."
-UPDATE=$(http_call PUT "$BASE_URL/$BUCKET/records/$FILE_ID/metadata" testkey="updatedvalue" newkey="newvalue")
+UPDATE=$(http PUT "$BASE_URL/$BUCKET/records/$FILE_ID/metadata" \
+  "x-api-key:$API_KEY" \
+  testkey="updatedvalue" newkey="newvalue")
 [[ $(jq -r '.status // empty' <<<"$UPDATE") == "success" ]] || fail "Update failed:\n$UPDATE"
 ok "Metadata updated."
 
@@ -81,6 +88,11 @@ ok "File deleted."
 # Delete Bucket
 log "Deleting bucket '$BUCKET'..."
 DEL_BUCKET=$(http_call DELETE "$BASE_URL/$BUCKET" || true)
-check_response_field "$DEL_BUCKET" '.error' && echo "$DEL_BUCKET" && ok "Bucket already deleted or error handled." || ok "Bucket deleted."
+if check_response_field "$DEL_BUCKET" '.detail' ; then
+  echo "$DEL_BUCKET"
+  ok "Bucket already deleted or error handled."
+else
+  ok "Bucket deleted."
+fi
 
 ok "✅ FileNest API test sequence completed successfully."

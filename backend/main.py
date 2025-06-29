@@ -189,6 +189,7 @@ def search_metadata(
     key: str = FastAPIQuery(..., description="Metadata key to search for"),
     value: str = FastAPIQuery(..., description="Value to match"),
     value_type: str = FastAPIQuery("string", regex="^(string|boolean|number|datetime)$", description="Type of the value"),
+    limit: int = FastAPIQuery(50, ge=1, le=1000, description="Maximum number of records to return"),
     api_key: str = Security(get_api_key)
 ):
     def cast_value(v, vtype):
@@ -196,20 +197,13 @@ def search_metadata(
             if vtype == "string":
                 return str(v)
             elif vtype == "boolean":
-                # Accept "true", "false" (case-insensitive)
                 return v.lower() == "true"
             elif vtype == "number":
-                # Try int or float
-                if '.' in v:
-                    return float(v)
-                else:
-                    return int(v)
+                return float(v) if '.' in v else int(v)
             elif vtype == "datetime":
-                # Parse ISO format datetime
                 return datetime.fromisoformat(v)
         except Exception:
-            # If casting fails, return original
-            return v
+            return v  # fallback
 
     results = []
     for record in FileTable.all():
@@ -217,8 +211,7 @@ def search_metadata(
         val = meta.get(key)
         if val is None:
             continue
-        
-        # Cast both to proper type before comparison
+
         try:
             val_casted = cast_value(str(val), value_type)
             value_casted = cast_value(value, value_type)
@@ -227,6 +220,8 @@ def search_metadata(
 
         if val_casted == value_casted:
             results.append(record)
+            if len(results) >= limit:
+                break
 
     return results
 

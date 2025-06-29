@@ -4,268 +4,213 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FileNest Admin Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.css" rel="stylesheet" type="text/css">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.css" rel="stylesheet" />
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     body {
-      margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f4f4;
-      color: #333;
+      background-color: #f8f9fa;
     }
 
     header {
-      background-color: #2c3e50;
-      color: #ecf0f1;
+      background-color: #343a40;
+      color: white;
       padding: 1rem;
       text-align: center;
       font-size: 1.5rem;
       font-weight: bold;
     }
 
-    .auth-container {
-      max-width: 400px;
-      margin: 100px auto;
-      padding: 2rem;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      text-align: center;
+    .dashboard {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
     }
 
-.dashboard {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-}
-
-
-.panel-wrapper {
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s ease;
-}
-.panel-wrapper.hidden {
-  display: none; /* Hides the entire column */
-}
-
-.panel-header {
-  background: #ecf0f1;
-  padding: 0.75rem 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  border-bottom: 1px solid #bdc3c7;
-  user-select: none;
-}
-
-
-.panel-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-}
+    .panel-wrapper {
+      display: flex;
+      flex-direction: column;
+      transition: flex-basis 0.3s ease;
+      overflow: hidden;
+    }
 
     .collapsed {
-      display: none;
+      flex: 0 0 0 !important;
+      width: 0 !important;
+      overflow: hidden !important;
+      padding: 0 !important;
+      border: none !important;
     }
 
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+    .panel-header {
+      background: #dee2e6;
+      padding: 0.75rem 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid #ced4da;
     }
 
     li {
-      background: white;
-      margin-bottom: 0.5rem;
-      padding: 0.75rem;
-      border-radius: 5px;
       cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    li:hover {
-      background: #dcdde1;
-    }
-
-    textarea {
-      width: 100%;
-      height: 200px;
-      font-family: monospace;
-      padding: 0.5rem;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      resize: vertical;
     }
 
     .readonly {
-      background-color: #f0f0f0;
+      background-color: #f1f3f5;
       padding: 0.5rem;
       border-radius: 5px;
       margin-bottom: 0.5rem;
       font-size: 0.9rem;
     }
 
-    button {
-      background-color: #27ae60;
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      margin-top: 1rem;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #219150;
-    }
-
     img {
       max-width: 100%;
-      max-height: 70vh;
+      max-height: 60vh;
       object-fit: contain;
       border: 1px solid #ccc;
       border-radius: 10px;
       background: #fff;
     }
+
+    #jsonEditor {
+      height: 300px;
+    }
   </style>
 </head>
 <body>
-  <header>FileNest Admin Dashboard</header>
+  <header>📁 FileNest Admin Dashboard</header>
 
-  <section class="auth-container" id="authContainer">
-    <h2>Enter Admin API Key</h2>
-    <input type="password" id="apiKeyInput" placeholder="API Key" style="padding:0.5rem;width: 100%;margin-bottom:1rem;">
-    <br />
-    <button onclick="loadData()">Login</button>
-  </section>
+  <div class="container mt-5" id="authContainer">
+    <div class="card mx-auto" style="max-width: 400px;">
+      <div class="card-body text-center">
+        <h5 class="card-title">Enter Admin API Key</h5>
+        <input type="password" id="apiKeyInput" class="form-control mb-3" placeholder="API Key" />
+        <button class="btn btn-success w-100" onclick="loadData()">Login</button>
+      </div>
+    </div>
+  </div>
 
-  <main class="dashboard" id="dashboard" style="display: none;">
+  <main class="dashboard d-none" id="dashboard">
     <!-- Files Panel -->
-    <section class="panel-wrapper" style="width: 25%;">
-      <div class="panel-header" onclick="toggleColumn(this)">📁 Files</div>
-      <form id="searchForm" onsubmit="handleSearch(event)" style="margin-bottom: 1rem;">
-  <input type="text" id="searchKey" placeholder="Key" style="width: 48%; margin-bottom: 0.5rem;" />
-  <input type="text" id="searchValue" placeholder="Value" style="width: 48%; margin-bottom: 0.5rem;" />
-  <select id="searchType" style="width: 48%; margin-bottom: 0.5rem;">
-    <option value="string">string</option>
-    <option value="number">number</option>
-    <option value="boolean">boolean</option>
-    <option value="datetime">datetime</option>
-  </select>
-  <input type="number" id="searchLimit" placeholder="Limit (default 50)" min="1" max="1000" style="width: 48%; margin-bottom: 0.5rem;" />
-  <button type="submit" style="width: 100%;">Search</button>
-</form>
-
-      <div class="panel-content" id="filesPanel">
-        <ul id="list"></ul>
+    <section class="panel-wrapper border-end" id="filesWrapper" style="flex: 0 0 25%;">
+      <div class="panel-header" onclick="toggleColumn('filesWrapper')">📁 Files (toggle)</div>
+      <div class="p-3 overflow-auto">
+        <form id="searchForm" onsubmit="handleSearch(event)" class="mb-3">
+          <div class="row g-2">
+            <div class="col-6"><input id="searchKey" class="form-control" placeholder="Key" /></div>
+            <div class="col-6"><input id="searchValue" class="form-control" placeholder="Value" /></div>
+            <div class="col-6">
+              <select id="searchType" class="form-select">
+                <option value="string">String</option>
+                <option value="number">Number</option>
+                <option value="boolean">Boolean</option>
+                <option value="datetime">Datetime</option>
+              </select>
+            </div>
+            <div class="col-6"><input type="number" id="searchLimit" class="form-control" placeholder="Limit" min="1" max="1000" /></div>
+            <div class="col-12"><button class="btn btn-primary w-100">Search</button></div>
+          </div>
+        </form>
+        <ul id="list" class="list-group"></ul>
       </div>
     </section>
 
     <!-- Preview Panel -->
-    <section class="panel-wrapper" style="width: 40%;">
-      <div class="panel-header" onclick="toggleColumn(this)">🖼️ Preview</div>
-      <div class="panel-content" id="previewPanel">
-        <img id="image" src="" />
+    <section class="panel-wrapper border-end" id="previewWrapper" style="flex: 0 0 40%;">
+      <div class="panel-header" onclick="toggleColumn('previewWrapper')">🖼️ Preview (toggle)</div>
+      <div class="p-3 overflow-auto">
+        <img id="image" src="" class="img-fluid" />
       </div>
     </section>
 
     <!-- Metadata Panel -->
-    <section class="panel-wrapper" style="width: 35%; border-right: none; border-left: 1px solid #bdc3c7;">
-      <div class="panel-header" onclick="toggleColumn(this)">📝 Metadata</div>
-      <div class="panel-content" id="metadataPanel">
-        <div id="jsonEditor" style="height: 300px;"></div>
-        <button onclick="saveMetadata()">Save</button>
-        <h4>Info</h4>
+    <section class="panel-wrapper" id="metadataWrapper" style="flex: 0 0 35%;">
+      <div class="panel-header" onclick="toggleColumn('metadataWrapper')">📝 Metadata (toggle)</div>
+      <div class="p-3 overflow-auto">
+        <div id="jsonEditor"></div>
+        <button class="btn btn-success mt-3" onclick="saveMetadata()">Save</button>
+        <h5 class="mt-4">Info</h5>
         <div id="info"></div>
       </div>
     </section>
   </main>
 
+  <!-- Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.js"></script>
+
   <script>
-    let files = [];
-    let current = null;
-    let jsonEditor = null;
-
-
-function handleSearch(event) {
-  event.preventDefault();
-
-  const key = document.getElementById("searchKey").value;
-  const value = document.getElementById("searchValue").value;
-  const value_type = document.getElementById("searchType").value;
-  const limit = document.getElementById("searchLimit").value;
-  const apiKey = document.getElementById("apiKeyInput").value;
-
-  const query = new URLSearchParams();
-
-  if (key) query.append("key", key);
-  if (value) query.append("value", value);
-  if (value_type) query.append("value_type", value_type);
-  if (limit) query.append("limit", limit);
-
-  fetch(`/records?${query.toString()}`, {
-    headers: {
-      "x-api-key": apiKey
-    }
-  })
-    .then(r => r.json())
-    .then(data => {
-      files = data;
-      const ul = document.getElementById("list");
-      ul.innerHTML = "";
-      for (const f of data) {
-        const li = document.createElement("li");
-        li.textContent = f.file_name || f.id;
-        li.onclick = () => showFile(f);
-        ul.appendChild(li);
-      }
-    })
-    .catch(err => alert("Search failed: " + err.message));
-}
-
+    let files = [], current = null, jsonEditor = null;
 
     function loadData() {
       const key = document.getElementById("apiKeyInput").value;
-      fetch("/records", {
-        headers: { "x-api-key": key }
+      fetch("/records", { headers: { "x-api-key": key } })
+        .then(r => r.json())
+        .then(data => {
+          files = data;
+          document.getElementById("authContainer").classList.add("d-none");
+          document.getElementById("dashboard").classList.remove("d-none");
+
+          const ul = document.getElementById("list");
+          ul.innerHTML = "";
+          data.forEach(f => {
+            const li = document.createElement("li");
+            li.className = "list-group-item";
+            li.textContent = f.file_name || f.id;
+            li.onclick = () => showFile(f);
+            ul.appendChild(li);
+          });
+
+          const container = document.getElementById("jsonEditor");
+          jsonEditor = new JSONEditor(container, {
+            mode: 'tree',
+            modes: ['code', 'form', 'text', 'tree', 'view'],
+            onError: err => alert(err.toString())
+          });
+        })
+        .catch(() => alert("Auth failed"));
+    }
+
+    function handleSearch(e) {
+      e.preventDefault();
+      const key = document.getElementById("searchKey").value;
+      const value = document.getElementById("searchValue").value;
+      const valueType = document.getElementById("searchType").value;
+      const limit = document.getElementById("searchLimit").value;
+      const apiKey = document.getElementById("apiKeyInput").value;
+
+      const query = new URLSearchParams();
+      if (key) query.append("key", key);
+      if (value) query.append("value", value);
+      if (valueType) query.append("value_type", valueType);
+      if (limit) query.append("limit", limit);
+
+      fetch(`/records?${query.toString()}`, {
+        headers: { "x-api-key": apiKey }
       })
         .then(r => r.json())
         .then(data => {
           files = data;
-          document.getElementById("authContainer").style.display = "none";
-          document.getElementById("dashboard").style.display = "flex";
-
           const ul = document.getElementById("list");
           ul.innerHTML = "";
-          for (const f of data) {
+          data.forEach(f => {
             const li = document.createElement("li");
+            li.className = "list-group-item";
             li.textContent = f.file_name || f.id;
             li.onclick = () => showFile(f);
             ul.appendChild(li);
-          }
+          });
         })
-        .catch(e => alert("Auth failed"));
-
-        const container = document.getElementById("jsonEditor");
-jsonEditor = new JSONEditor(container, {
-  mode: 'tree',
-  modes: ['code', 'form', 'text', 'tree', 'view'], // allow switching
-  onError: function (err) {
-    alert(err.toString());
-  }
-});
+        .catch(err => alert("Search failed: " + err.message));
     }
 
     function showFile(f) {
       current = f;
       document.getElementById("image").src = f.file_url;
       jsonEditor.set(f.metadata || {});
-
       const infobox = document.getElementById("info");
       infobox.innerHTML = "";
       ["id", "ttl_seconds", "upload_time", "created_at", "updated_at"].forEach(k => {
@@ -276,34 +221,27 @@ jsonEditor = new JSONEditor(container, {
       });
     }
 
-    function toggleColumn(headerElement) {
-  const wrapper = headerElement.parentElement;
-  wrapper.classList.toggle("hidden");
-}
+    function saveMetadata() {
+      const key = document.getElementById("apiKeyInput").value;
+      try {
+        const parsed = jsonEditor.get();
+        fetch(`/records/${current.id}/metadata`, {
+          method: "PUT",
+          headers: {
+            "x-api-key": key,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ metadata: parsed })
+        }).then(() => alert("Saved!"));
+      } catch (e) {
+        alert("Invalid JSON: " + e.message);
+      }
+    }
 
-function saveMetadata() {
-  const key = document.getElementById("apiKeyInput").value;
-  try {
-    const parsed = jsonEditor.get();
-    fetch(`/records/${current.id}/metadata`, {
-      method: "PUT",
-      headers: {
-        "x-api-key": key,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ metadata: parsed })
-    }).then(() => alert("Saved!"));
-  } catch (e) {
-    alert("Invalid JSON: " + e.message);
-  }
-}
-
-    function togglePanel(id) {
-      const el = document.getElementById(id);
-      el.classList.toggle("collapsed");
+    function toggleColumn(id) {
+      const wrapper = document.getElementById(id);
+      wrapper.classList.toggle("collapsed");
     }
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/jsoneditor@9.10.0/dist/jsoneditor.min.js"></script>
-
 </body>
 </html>

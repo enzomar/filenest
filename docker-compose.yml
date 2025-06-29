@@ -4,14 +4,13 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
     container_name: filenest_backend
     restart: unless-stopped
     env_file:
       - .env
     volumes:
       - ./storage:/app/storage
-      - ./data:/app/data
+      - ./backend/static:/app/backend/static
     expose:
       - "8000"
     healthcheck:
@@ -34,9 +33,7 @@ services:
     volumes:
       - ./storage:/app/storage:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./backend/static:/app/static:ro 
-
-
+      - ./backend/static:/app/backend/static:ro
     depends_on:
       backend:
         condition: service_healthy

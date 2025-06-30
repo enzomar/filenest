@@ -27,6 +27,7 @@ services:
   nginx:
     build:
       context: .
+      dockerfile: nginx/Dockerfile
     container_name: filenest_nginx
     restart: unless-stopped
     ports:

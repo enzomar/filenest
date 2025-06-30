@@ -97,12 +97,13 @@ async loadRecord(bucket, record_id) {
 
         // Use authenticated URL here:
         const authFileUrl = this.getAuthenticatedFileUrl(data.file_url);
+        const fileUrl = data.file_url;
         this.selectedFile.auth_file_url = authFileUrl;
 
         // Fetch file size using HEAD request if file_url exists
         if (authFileUrl) {
           try {
-            const headResp = await fetch(fileUrl, { method: 'HEAD' });
+            const headResp = await fetch(authFileUrl, { method: 'HEAD' });
             if (headResp.ok) {
               const len = headResp.headers.get('content-length');
               if (len) {

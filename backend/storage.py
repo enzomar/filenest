@@ -63,7 +63,7 @@ async def save_file_bytes(file_path: str, file_bytes: bytes):
     async with aiofiles.open(file_path, "wb") as out:
         await out.write(file_bytes)
 
-    os.chmod(file_path, 0o755)  # Set rwxr-xr-x
+    os.chmod(file_path, 0o644)  # Set rwxr-xr-x
 
 
 async def save_uploadfile(file, file_path: str):
@@ -80,7 +80,7 @@ async def save_uploadfile(file, file_path: str):
                 raise ValueError("File too large")
             await out.write(chunk)
 
-    os.chmod(file_path, 0o755)  # Set rwxr-xr-x
+    os.chmod(file_path, 0o644)  # Set rwxr-xr-x
 
 
 # -----------------------------

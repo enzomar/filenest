@@ -36,7 +36,8 @@ services:
       - "8082:80"
     volumes:
       - ./storage:/app/storage:ro
-
+      - ./backend/static:/usr/share/nginx/html:ro
+      - ./nginx/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
     depends_on:
       backend:
         condition: service_healthy

@@ -139,7 +139,7 @@ async def create_record(
     Returns the ID and accessible URL of the uploaded file.
     """
     create_bucket_helper(bucket, exist_ok=True)
-    ttl = ttl_seconds if ttl_seconds and 0 <= ttl_seconds  else 3600
+    ttl = ttl_seconds if ttl_seconds is not None and ttl_seconds >= 0 else 3600
 
     file_id = str(uuid.uuid4())
     safe_filename = validate_filename(file.filename)

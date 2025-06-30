@@ -244,7 +244,7 @@
     <div class="col-md-3">
       <h6 class="text-primary fw-semibold">Preview</h6>
       <template x-if="selectedFile && selectedFileIsImage">
-        <img :src="selectedFile.file_url" class="preview-image w-100" alt="Preview" />
+        <img :src="selectedFile.auth_file_url" class="preview-image w-100" alt="Preview" />
       </template>
       <template x-if="selectedFile && !selectedFileIsImage">
         <div class="text-muted fst-italic">No preview for this file type.</div>
@@ -260,17 +260,17 @@
       <span class="me-2 text-secondary small fw-medium">File Link:</span>
       <button
         class="btn btn-sm btn-outline-secondary copy-btn"
-        @click="navigator.clipboard.writeText(selectedFile.file_url)"
+        @click="navigator.clipboard.writeText(selectedFile.auth_file_url)"
       >
         Copy
       </button>
     </div>
     <a
       class="copy-link"
-      :href="selectedFile.file_url"
+      :href="selectedFile.auth_file_url"
       target="_blank"
       rel="noopener noreferrer"
-      x-text="selectedFile.file_url"
+      x-text="selectedFile.auth_file_url"
       style="word-break: break-all; display: inline-block;"
     ></a>
   </div>

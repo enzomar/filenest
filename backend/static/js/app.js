@@ -94,11 +94,13 @@ async loadRecord(bucket, record_id) {
         const data = await res.json();
         this.selectedFile = data;
 
+
         // Use authenticated URL here:
-        const fileUrl = this.getAuthenticatedFileUrl(data.file_url);
+        const authFileUrl = this.getAuthenticatedFileUrl(data.file_url);
+        this.selectedFile.auth_file_url = authFileUrl;
 
         // Fetch file size using HEAD request if file_url exists
-        if (fileUrl) {
+        if (authFileUrl) {
           try {
             const headResp = await fetch(fileUrl, { method: 'HEAD' });
             if (headResp.ok) {
@@ -121,7 +123,7 @@ async loadRecord(bucket, record_id) {
             this.imageInfo = `Dimensions: ${img.naturalWidth}x${img.naturalHeight}px`;
             if (this.fileSize) this.imageInfo += ` | Size: ${this.fileSize}`;
           };
-          img.src = fileUrl;
+          img.src = authFileUrl;
         }
       } catch (err) {
         alert(err.message);

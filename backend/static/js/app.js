@@ -1,6 +1,6 @@
 function fileNestApp() {
   return {
-    apiKey: 'supersecretapikey',
+    apiKey: '',
     buckets: [],
     selectedBucket: null,
     files: [],
@@ -39,6 +39,14 @@ function fileNestApp() {
       document.body.classList.toggle('dark-mode', this.darkMode);
     },
 
+ // NEW helper to append api-key param safely
+    getAuthenticatedFileUrl(url) {
+      if (!url) return url;
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}api-key=${encodeURIComponent(this.apiKey)}`;
+    },
+
+
     loadBuckets() {
       fetch('/api/v1/buckets', {
         headers: { 'x-api-key': this.apiKey }
@@ -75,47 +83,50 @@ function fileNestApp() {
     },
 
 async loadRecord(bucket, record_id) {
-  this.selectedBucket = bucket;
-  this.imageInfo = '';
-  this.fileSize = ''; // reset on new load
-  try {
-    const res = await fetch(`/api/v1/buckets/${bucket}/records/${record_id}`, {
-      headers: { 'x-api-key': this.apiKey }
-    });
-    if (!res.ok) throw new Error('Failed to load record');
-    const data = await res.json();
-    this.selectedFile = data;
-
-    // Fetch file size using HEAD request if file_url exists
-    if (data.file_url) {
+      this.selectedBucket = bucket;
+      this.imageInfo = '';
+      this.fileSize = ''; // reset on new load
       try {
-        const headResp = await fetch(data.file_url, { method: 'HEAD' });
-        if (headResp.ok) {
-          const len = headResp.headers.get('content-length');
-          if (len) {
-            this.fileSize = this.formatFileSize(parseInt(len, 10));
-          } else {
+        const res = await fetch(`/api/v1/buckets/${bucket}/records/${record_id}`, {
+          headers: { 'x-api-key': this.apiKey }
+        });
+        if (!res.ok) throw new Error('Failed to load record');
+        const data = await res.json();
+        this.selectedFile = data;
+
+        // Use authenticated URL here:
+        const fileUrl = this.getAuthenticatedFileUrl(data.file_url);
+
+        // Fetch file size using HEAD request if file_url exists
+        if (fileUrl) {
+          try {
+            const headResp = await fetch(fileUrl, { method: 'HEAD' });
+            if (headResp.ok) {
+              const len = headResp.headers.get('content-length');
+              if (len) {
+                this.fileSize = this.formatFileSize(parseInt(len, 10));
+              } else {
+                this.fileSize = 'Unknown size';
+              }
+            }
+          } catch {
             this.fileSize = 'Unknown size';
           }
         }
-      } catch {
-        this.fileSize = 'Unknown size';
-      }
-    }
 
-    // Image preview info (if image)
-    if (data.file_url?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i)) {
-      const img = new Image();
-      img.onload = () => {
-        this.imageInfo = `Dimensions: ${img.naturalWidth}x${img.naturalHeight}px`;
-        if (this.fileSize) this.imageInfo += ` | Size: ${this.fileSize}`;
-      };
-      img.src = data.file_url;
-    }
-  } catch (err) {
-    alert(err.message);
-  }
-},
+        // Image preview info (if image)
+        if (fileUrl?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i)) {
+          const img = new Image();
+          img.onload = () => {
+            this.imageInfo = `Dimensions: ${img.naturalWidth}x${img.naturalHeight}px`;
+            if (this.fileSize) this.imageInfo += ` | Size: ${this.fileSize}`;
+          };
+          img.src = fileUrl;
+        }
+      } catch (err) {
+        alert(err.message);
+      }
+    },
 
 
     async updateMetadata() {

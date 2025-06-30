@@ -24,6 +24,22 @@ services:
       --port 8000
       --workers 2
 
+
+#  cleanup_cron:
+#    image: alpine:latest
+#    container_name: filenest_cleanup_cron
+#    restart: unless-stopped
+#    depends_on:
+#      backend:
+#        condition: service_healthy
+#    entrypoint: /bin/sh -c
+#    command: |
+#      "apk add --no-cache curl && \
+#      while true; do \
+#        curl -fsS 'http://backend:8000/cleanup-expired' || echo 'Cleanup call failed'; \
+#        sleep 3600; \
+#      done"
+
   nginx:
     build:
       context: .

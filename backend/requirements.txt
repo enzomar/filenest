@@ -5,6 +5,5 @@ aiofiles
 python-multipart
 pydantic
 pydantic-settings
-tinydb
 psutil
 jinja2

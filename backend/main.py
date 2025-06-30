@@ -38,9 +38,11 @@ async def health_check():
 
 @app.post("/cleanup-expired", include_in_schema=False)
 async def trigger_full_cleanup(request: Request):
+    '''
     api_key = request.headers.get("x-api-key")
     if api_key != settings.API_KEY:
         raise HTTPException(status_code=403, detail="Forbidden")
+    '''
     await cleanup_all_buckets()
     return {"detail": "All expired files cleaned up."}
 

@@ -28,7 +28,7 @@ services:
     container_name: filenest_nginx
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8082:80"
     volumes:
       - ./storage:/app/storage:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro

@@ -17,7 +17,11 @@ Filenest API is a lightweight, secure file storage and metadata tagging system. 
 
 Designed for developers and technical users as well as non-technical admins using a simple UI.
 """,
-    version="1.0.0"
+    version="1.0.0",
+
+              docs_url='/api/docs',
+              redoc_url='/api/redoc',
+              openapi_url='/api/openapi.json'
 )
 
 

@@ -63,16 +63,25 @@ async def save_file_bytes(file_path: str, file_bytes: bytes):
     async with aiofiles.open(file_path, "wb") as out:
         await out.write(file_bytes)
 
+    os.chmod(file_path, 0o755)  # Set rwxr-xr-x
+
+
 async def save_uploadfile(file, file_path: str):
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     size = 0
     await file.seek(0)
     async with aiofiles.open(file_path, "wb") as out:
-        while chunk := await file.read(1024 * 1024):
+        while True:
+            chunk = await file.read(1024 * 1024)
+            if not chunk:
+                break
             size += len(chunk)
             if size > settings.MAX_FILE_SIZE:
                 raise ValueError("File too large")
             await out.write(chunk)
+
+    os.chmod(file_path, 0o755)  # Set rwxr-xr-x
+
 
 # -----------------------------
 # Metadata Operations

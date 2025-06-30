@@ -3,20 +3,21 @@ function fileNestApp() {
     apiKey: '',
     buckets: [],
     selectedBucket: null,
-    files: [],
-    selectedFile: null,
+    records: [],
+    selectedRecord: null,
     imageInfo: '',
     authenticated: false,
     darkMode: localStorage.getItem('darkMode') === 'true',
     jsonEditor: null,
     fileSize: '',
+    textPreview: '',
 
     init() {
       if (this.darkMode) {
         document.body.classList.add('dark-mode');
       }
 
-      this.$watch('selectedFile', (file) => {
+      this.$watch('selectedRecord', (file) => {
         if (this.jsonEditor) {
           this.jsonEditor.destroy();
           this.jsonEditor = null;
@@ -59,8 +60,8 @@ function fileNestApp() {
           this.buckets = data.buckets || [];
           this.authenticated = true;
           this.selectedBucket = null;
-          this.files = [];
-          this.selectedFile = null;
+          this.records = [];
+          this.selectedRecord = null;
         })
         .catch(err => alert(err.message));
     },
@@ -75,8 +76,8 @@ function fileNestApp() {
           return res.json();
         })
         .then(data => {
-          this.files = Array.isArray(data) ? data : [];
-          this.selectedFile = null;
+          this.records = Array.isArray(data) ? data : [];
+          this.selectedRecord = null;
           this.imageInfo = '';
         })
         .catch(err => alert(err.message));
@@ -92,13 +93,13 @@ async loadRecord(bucket, record_id) {
         });
         if (!res.ok) throw new Error('Failed to load record');
         const data = await res.json();
-        this.selectedFile = data;
+        this.selectedRecord = data;
 
 
         // Use authenticated URL here:
         const authFileUrl = this.getAuthenticatedFileUrl(data.file_url);
         const fileUrl = data.file_url;
-        this.selectedFile.auth_file_url = authFileUrl;
+        this.selectedRecord.auth_file_url = authFileUrl;
 
         // Fetch file size using HEAD request if file_url exists
         if (authFileUrl) {
@@ -117,6 +118,26 @@ async loadRecord(bucket, record_id) {
           }
         }
 
+        // Fetch text preview if text file
+if (this.selectedRecordIsText()) {
+  try {
+    const resp = await fetch(authFileUrl, {
+      headers: { 'x-api-key': this.apiKey },
+      method: 'GET',
+    });
+    if (resp.ok) {
+      const text = await resp.text();
+      this.textPreview = text.slice(0, 300);
+    } else {
+      this.textPreview = "Could not load preview.";
+    }
+  } catch (e) {
+    this.textPreview = "Error loading preview.";
+  }
+} else {
+  this.textPreview = '';  // Clear if not text file
+}
+
         // Image preview info (if image)
         if (fileUrl?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i)) {
           const img = new Image();
@@ -133,7 +154,7 @@ async loadRecord(bucket, record_id) {
 
 
     async updateMetadata() {
-      if (!this.selectedFile || !this.selectedBucket || !this.jsonEditor) {
+      if (!this.selectedRecord || !this.selectedBucket || !this.jsonEditor) {
         alert("No file selected or JSON editor missing");
         return;
       }
@@ -146,7 +167,7 @@ async loadRecord(bucket, record_id) {
         return;
       }
 
-      const url = `/api/v1/buckets/${this.selectedBucket}/records/${this.selectedFile.id}/metadata`;
+      const url = `/api/v1/buckets/${this.selectedBucket}/records/${this.selectedRecord.id}/metadata`;
 
       try {
         const res = await fetch(url, {
@@ -164,9 +185,8 @@ async loadRecord(bucket, record_id) {
         }
 
         alert("Metadata updated!");
-        this.selectedFile.metadata = metadata;
+        this.selectedRecord.metadata = metadata;
 
-        this.loadRecords(this.selectedBucket);
       } catch (err) {
         alert("Failed to update metadata: " + err.message);
       }
@@ -190,8 +210,8 @@ async loadRecord(bucket, record_id) {
         this.loadBuckets();
         if (this.selectedBucket === bucket) {
           this.selectedBucket = null;
-          this.files = [];
-          this.selectedFile = null;
+          this.records = [];
+          this.selectedRecord = null;
         }
       } catch (err) {
         alert('Error deleting bucket: ' + err.message);
@@ -212,10 +232,10 @@ async loadRecord(bucket, record_id) {
           throw new Error(error.detail || 'Failed to delete file');
         }
         alert('File deleted.');
-        // Reload files list and clear selection if needed
+        // Reload records list and clear selection if needed
         this.loadRecords(bucket);
-        if (this.selectedFile && this.selectedFile.id === record_id) {
-          this.selectedFile = null;
+        if (this.selectedRecord && this.selectedRecord.id === record_id) {
+          this.selectedRecord = null;
           this.imageInfo = '';
         }
       } catch (err) {
@@ -223,8 +243,8 @@ async loadRecord(bucket, record_id) {
       }
     },
 
-    get selectedFileIsImage() {
-      return this.selectedFile?.file_url?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i);
+    get selectedRecordIsImage() {
+      return this.selectedRecord?.file_url?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i);
     },
 
     formatDate(dateStr) {
@@ -249,6 +269,21 @@ formatFileSize(bytes) {
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+},
+
+copyToClipboard(text) {
+  if (!text) return;
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      alert("Copied to clipboard!");
+    })
+    .catch(err => {
+      console.error("Copy failed:", err);
+      alert("Failed to copy link");
+    });
+},
+selectedRecordIsText() {
+  return this.selectedRecord?.file_url?.match(/\.(txt|md|json|csv|log|xml|yaml|yml)$/i);
 },
 
   };

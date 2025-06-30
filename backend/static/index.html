@@ -193,8 +193,8 @@ body {
     <template x-if="selectedBucket">
       <span> / <strong x-text="selectedBucket"></strong></span>
     </template>
-    <template x-if="selectedFile">
-      <span> / <strong x-text="selectedFile.file_url ? selectedFile.file_url.split('/').pop() : selectedFile.id"></strong></span>
+    <template x-if="selectedRecord">
+      <span> / <strong x-text="selectedRecord.file_url ? selectedRecord.file_url.split('/').pop() : selectedRecord.id"></strong></span>
     </template>
   </div>
 
@@ -230,24 +230,24 @@ body {
     <div class="d-flex justify-content-between align-items-center mb-2">
   <h6 class="text-primary fw-semibold">
     Records
-    <span class="text-muted small" x-text="'(' + files.length + ')'"></span>
+    <span class="text-muted small" x-text="'(' + records.length + ')'"></span>
   </h6>
   <button class="btn-icon" @click="loadRecords(selectedBucket)" title="Refresh">
     <i class="bi bi-arrow-clockwise"></i>
   </button>
 </div>
 
-    <template x-for="file in files" :key="file.id">
+    <template x-for="record in records" :key="record.id">
       <div class="d-flex justify-content-between align-items-center">
         <button
         class="entry-button border-0"
-        :class="{ active: selectedFile && selectedFile.id === file.id }"
-        @click="loadRecord(selectedBucket, file.id)"
+        :class="{ active: selectedRecord && selectedRecord.id === record.id }"
+        @click="loadRecord(selectedBucket, record.id)"
         >
         <i class="bi bi-file-earmark me-1"></i>
-        <span x-text="file.file_url ? file.file_url.split('/').pop() : file.id"></span>
+        <span x-text="record.file_url ? record.file_url.split('/').pop() : record.id"></span>
       </button>
-      <button class="btn-icon" @click="deleteFile(selectedBucket, file.id)"><i class="bi bi-trash"></i></button>
+      <button class="btn-icon" @click="deleteFile(selectedBucket, record.id)"><i class="bi bi-trash"></i></button>
     </div>
   </template>
 </section>
@@ -259,7 +259,7 @@ body {
     <div class="col-md-9">
       <h6 class="text-primary fw-semibold">Metadata</h6>
       <div class="metadata-box">
-        <template x-if="selectedFile">
+        <template x-if="selectedRecord">
           <div>
              <!-- JSON editor -->
             <div id="jsoneditor" style="height: 300px;"></div>
@@ -273,58 +273,75 @@ body {
               <h6 class="mb-2">File Details</h6>
               <dl class="row mb-0">
                 <dt class="col-sm-4 text-truncate">TTL (seconds):</dt>
-                <dd class="col-sm-8" x-text="selectedFile.ttl_seconds ?? 'N/A'"></dd>
+                <dd class="col-sm-8" x-text="selectedRecord.ttl_seconds ?? 'N/A'"></dd>
 
                 <dt class="col-sm-4 text-truncate">Upload Time:</dt>
-                <dd class="col-sm-8" x-text="formatDate(selectedFile.upload_time)"></dd>
+                <dd class="col-sm-8" x-text="formatDate(selectedRecord.upload_time)"></dd>
 
                 <dt class="col-sm-4 text-truncate">Created At:</dt>
-                <dd class="col-sm-8" x-text="formatDate(selectedFile.created_at)"></dd>
+                <dd class="col-sm-8" x-text="formatDate(selectedRecord.created_at)"></dd>
 
                 <dt class="col-sm-4 text-truncate">Updated At:</dt>
-                <dd class="col-sm-8" x-text="formatDate(selectedFile.updated_at)"></dd>
+                <dd class="col-sm-8" x-text="formatDate(selectedRecord.updated_at)"></dd>
               </dl>
             </div>
 
           </div>
         </template>
-        <template x-if="!selectedFile">
+        <template x-if="!selectedRecord">
           <div class="text-muted fst-italic">Select a file to edit metadata.</div>
         </template>
       </div>
     </div>
 
     <!-- Preview on the RIGHT -->
-    <div class="col-md-3">
-      <h6 class="text-primary fw-semibold">Preview</h6>
-      <template x-if="selectedFile && selectedFileIsImage">
-        <img :src="selectedFile.auth_file_url" class="preview-image w-100" alt="Preview" />
-      </template>
-      <template x-if="selectedFile && !selectedFileIsImage">
-        <div class="text-muted fst-italic">No preview for this file type.</div>
-      </template>
-    </div>
+
+
+<!-- Preview on the RIGHT -->
+<div class="col-md-3">
+  <h6 class="text-primary fw-semibold">Preview</h6>
+
+  <!-- Image preview -->
+  <template x-if="selectedRecord && selectedRecordIsImage">
+    <img :src="selectedRecord.auth_file_url" class="preview-image w-100" alt="Preview" />
+  </template>
+
+  <!-- Text preview -->
+  <template x-if="selectedRecord && selectedRecordIsText()">
+<div
+  class="text-wrap small border rounded p-2"
+  style="max-height: 250px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;"
+  x-text="textPreview"
+></div>
+  </template>
+
+  <!-- No preview -->
+  <template x-if="selectedRecord && !selectedRecordIsImage && !selectedRecordIsText()">
+    <div class="text-muted fst-italic">No preview for this file type.</div>
+  </template>
+</div>
+
 
 
 
 <!-- File link below both -->
-<template x-if="selectedFile">
+<template x-if="selectedRecord">
   <div class="mt-3">
     <div class="d-flex align-items-center mb-1">
       <span class="me-2 text-secondary small fw-medium">File Link:</span>
-      <button
+       <button
         class="btn btn-sm btn-outline-secondary copy-btn"
-        @click="navigator.clipboard.writeText(selectedFile.auth_file_url)"
+        @click="copyToClipboard(selectedRecord.auth_file_url)"
       >
         Copy
       </button>
     </div>
     <a
       class="copy-link"
-      :href="selectedFile.auth_file_url"
+      :href="selectedRecord.auth_file_url"
       target="_blank"
       rel="noopener noreferrer"
-      x-text="selectedFile.auth_file_url"
+      x-text="selectedRecord.auth_file_url"
       style="word-break: break-all; display: inline-block;"
     ></a>
   </div>

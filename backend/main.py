@@ -3,13 +3,23 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+import os
 
 
 from settings import settings
 from api_filnest import router as filenest_router
 from api_s3 import router as s3_router
 
-app = FastAPI(title="FileNest")
+app = FastAPI(
+    title="Filenest: File and Metadata Storage API",
+    description="""
+Filenest API is a lightweight, secure file storage and metadata tagging system. It supports bucket creation, file uploads, metadata updates, and TTL (time-to-live) for automatic expiration.
+
+Designed for developers and technical users as well as non-technical admins using a simple UI.
+""",
+    version="1.0.0"
+)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -43,4 +53,7 @@ if settings.ENV.lower() == "dev":
     async def serve_frontend():
         return FileResponse("static/index.html")
 
+    app.mount("/files", StaticFiles(directory=os.path.abspath("../storage")), name="files")
+
+ 
 

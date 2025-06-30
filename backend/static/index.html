@@ -22,6 +22,17 @@
   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
   <style>
+    html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
     body {
       font-family: 'Inter', sans-serif;
       background-color: #f5f7fa;
@@ -50,16 +61,35 @@
       margin-top: 2rem;
       padding: 0 2rem;
     }
+.container-fluid {
+  flex: 1 1 auto;
+  overflow-y: hidden; /* Prevent double scroll */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
     .buckets-column, .files-column, .preview-column {
       background: white;
       border-radius: 8px;
       padding: 1rem;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
     }
-    .content-columns {
-      display: flex;
-      gap: 0.5rem;
-    }
+
+    .buckets-column,
+.files-column {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+ .content-columns {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  min-height: 0; 
+}
     .preview-image {
       max-height: 250px;
       margin-bottom: 1rem;
@@ -135,15 +165,27 @@
   </style>
 </head>
 <body :class="{ 'dark-mode': darkMode }">
- <header class="d-flex align-items-center justify-content-between px-4 py-3">
+<header class="d-flex align-items-center justify-content-between px-4 py-3">
   <div class="fs-4 fw-semibold d-flex align-items-center gap-2">
     <img src="/static/logo.png" alt="logo" style="height: 32px; width: auto; background-color: white;" />
     FileNest
   </div>
-  <button @click="toggleDarkMode" class="btn btn-sm btn-light">
-    <span x-text="darkMode ? '☀️ Light' : '🌙 Dark'"></span>
-  </button>
+  <div class="d-flex align-items-center">
+        <button @click="toggleDarkMode" class="btn btn-sm btn-light">
+      <span x-text="darkMode ? '☀️ Light' : '🌙 Dark'"></span>
+    </button>
+        <a
+      href="/docs"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="btn btn-sm btn-light ms-2"
+      title="Open API Docs"
+    >
+      <i class="bi bi-filetype-doc"></i>
+    </a>
+  </div>
 </header>
+
 
   <div class="container-fluid" x-show="authenticated">
    <div class="breadcrumb-path mb-3">
@@ -159,10 +201,15 @@
   <div class="content-columns">
     <!-- Buckets -->
     <aside class="buckets-column" style="flex: 0 0 320px;">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="text-primary fw-semibold">Buckets</h6>
-        <button class="btn-icon" @click="refreshBuckets" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
-      </div>
+ <div class="d-flex justify-content-between align-items-center mb-2">
+  <h6 class="text-primary fw-semibold">
+    Buckets
+    <span class="text-muted small" x-text="'(' + buckets.length + ')'"></span>
+  </h6>
+  <button class="btn-icon" @click="loadBuckets" title="Refresh">
+    <i class="bi bi-arrow-clockwise"></i>
+  </button>
+</div>
       <template x-for="bucket in buckets" :key="bucket">
         <div class="d-flex justify-content-between align-items-center">
           <button
@@ -181,8 +228,15 @@
   <!-- Files -->
   <section class="files-column" style="flex: 0 0 400px;">
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="text-primary fw-semibold">Files</h6>
-    </div>
+  <h6 class="text-primary fw-semibold">
+    Records
+    <span class="text-muted small" x-text="'(' + files.length + ')'"></span>
+  </h6>
+  <button class="btn-icon" @click="loadRecords(selectedBucket)" title="Refresh">
+    <i class="bi bi-arrow-clockwise"></i>
+  </button>
+</div>
+
     <template x-for="file in files" :key="file.id">
       <div class="d-flex justify-content-between align-items-center">
         <button
@@ -296,6 +350,10 @@
     />
     <button class="btn btn-primary w-100" @click="loadBuckets">Login</button>
   </div>
+  <h7>default: supersecretapikey</h7>
 </div>
+<footer class="text-center py-3 text-muted small mt-auto">
+  © <span x-text="new Date().getFullYear()"></span> FileNest. All rights reserved.
+</footer>
 </body>
 </html>

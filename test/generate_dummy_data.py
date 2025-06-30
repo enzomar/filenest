@@ -17,8 +17,8 @@ except ImportError:
 API_KEY = "supersecretapikey"
 BASE_URL = "http://0.0.0.0:8000/api/v1/buckets"
 
-NUM_BUCKETS = 5
-FILES_PER_BUCKET = 10
+NUM_BUCKETS = 3
+FILES_PER_BUCKET = 30
 
 HEADERS = {"x-api-key": API_KEY}
 

@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -26,6 +26,14 @@ app.include_router(filenest_router)
 async def health_check():
     return {"status": "ok"}
 
+@app.post("/cleanup-expired", include_in_schema=False)
+async def trigger_full_cleanup(request: Request):
+    api_key = request.headers.get("x-api-key")
+    if api_key != settings.API_KEY:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    await cleanup_all_buckets()
+    return {"detail": "All expired files cleaned up."}
+
 # Serve frontend only in development
 if settings.ENV.lower() == "dev":
 
@@ -34,3 +42,5 @@ if settings.ENV.lower() == "dev":
     @app.get("/", include_in_schema=False)
     async def serve_frontend():
         return FileResponse("static/index.html")
+
+

@@ -173,26 +173,35 @@ def search_metadata(bucket: str, key: str | None = None, value: str | None = Non
 
 
 
-async def cleanup_expired_files(bucket: str):
-    """Delete expired files and their metadata in a bucket."""
-    table = get_bucket_table(bucket)
-    File = Query()
+async def cleanup_all_buckets():
+    print("[CLEANUP] Starting cleanup for all buckets...")
+    buckets = list_buckets()
     
-    # Collect expired records
-    expired_records = [r for r in table.all() if is_expired(r)]
+    for bucket in buckets:
+        print(f"[CLEANUP] Checking bucket: {bucket}")
+        table = get_bucket_table(bucket)
+        expired_records = [r for r in table.all() if is_expired(r)]
 
-    for record in expired_records:
-        file_path = get_object_path(bucket, record.get("filename"))
-        
-        # Delete file if it exists
-        if file_path and os.path.isfile(file_path):
-            try:
-                os.remove(file_path)
-            except Exception as e:
-                print(f"[ERROR] Failed to remove file {file_path}: {e}")
+        for record in expired_records:
+            file_path = get_object_path(bucket, record.get("filename"))
+            file_id = record.get("id")
+            filename = record.get("filename")
 
-        # Remove metadata
-        if "id" in record:
-            table.remove(File.id == record["id"])
+            if file_path and os.path.isfile(file_path):
+                try:
+                    os.remove(file_path)
+                    print(f"[CLEANUP] Deleted file: {file_path}")
+                except Exception as e:
+                    print(f"[ERROR] Failed to delete {file_path}: {e}")
+            else:
+                print(f"[SKIP] File not found: {file_path}")
+
+            # Remove from metadata
+            if file_id:
+                table.remove(Query().id == file_id)
+                print(f"[CLEANUP] Removed metadata for ID: {file_id}")
+
+    print("[CLEANUP] Completed cleanup.")
+
 
 

@@ -47,8 +47,8 @@ http://localhost:8000
 | `POST /api/v1/buckets/{bucket}/records/` | Upload a file with TTL & metadata |
 | `GET /api/v1/buckets/{bucket}/records/{id}` | Retrieve metadata for a file |
 | `GET /api/v1/buckets/{bucket}/records` | Search records by metadata |
-| `PUT /metadata/` | Replace metadata |
-| `PATCH /metadata/` | Update a specific metadata field |
+| `PUT /api/v1/buckets/{bucket}/records/{id}/metadata/` | Replace metadata |
+| `PATCH /api/v1/buckets/{bucket}/records/{id}/metadata/` | Update a specific metadata field |
 | `DELETE /api/v1/buckets/{bucket}/records/{id}` | Delete file and metadata |
 | `GET /files/{filename}` | Serve static file (public) |
 | `GET /health` | Service health check |

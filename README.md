@@ -13,15 +13,14 @@
 - 🧹 **TTL-based Cleanup System** (cron/external trigger)
 - 🌐 **Public Static File Serving**
 - 💡 **Health Check Endpoint**
-- ⚙️ **Built with FastAPI + SQLite (or PostgreSQL)**
+- ⚙️ **Built with FastAPI + SQLite**
 
 ---
 
 ## 🛠️ Use Cases
 
-- Temporary content storage for AI workflows  
+- Temporary content storage (or not is TTL is = 0)  
 - Media delivery in headless CMS setups  
-- Automation and backend pipelines (e.g., with [n8n](https://n8n.io/))  
 - Any case where metadata + file + TTL matters
 
 ---
@@ -53,6 +52,7 @@ http://localhost:8000
 | `DELETE /api/v1/buckets/{bucket}/records/{id}` | Delete file and metadata |
 | `GET /files/{filename}` | Serve static file (public) |
 | `GET /health` | Service health check |
+| `POST /cleanup-expired` | Remove expired records |
 
 ---
 
@@ -85,7 +85,7 @@ curl -H "x-api-key: supersecretapikey"   http://localhost:8000/api/v1/buckets/de
 Uploaded files are accessible publicly via:
 
 ```
-http://localhost:8000/files/{filename}
+http://localhost:8000/files/{filename}?api-key=API_KEY
 ```
 
 Metadata and TTL logic remain secure.
@@ -146,6 +146,8 @@ filenest/
 │   ├── main.py        # FastAPI app
 │   ├── api_filnest.py # Endpoints
 │   └── settings.py    # Config loader
+│   ├── api_filnest.py # Endpoints
+│   └── static         # UI static file AlpineJS
 ├── docker-compose.yml
 └── .env
 ```

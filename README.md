@@ -1,229 +1,174 @@
-# FileNest - Secure TTL File Storage Service
+# 🚀 FileNest – Secure, Lightweight TTL File Storage & Metadata API
 
-A lightweight, production-ready FastAPI-based file upload service with:
-
-- ✅ API key authentication
-- ✅ File size limit (default 10 MB)
-- ✅ Automatic file expiration via TTL (default: 1 hour)
-- ✅ TinyDB metadata storage
-- ✅ Metadata and file association via UUID
-- ✅ Static file serving
-- ✅ Background cleanup task
-- ✅ Health check endpoint
-- ✅ CORS support
-- ✅ Docker Compose setup (optional)
+**FileNest** is a minimal, production-ready file storage and metadata API built with FastAPI. It supports **time-to-live (TTL)** file expiration, **secure uploads**, **searchable metadata**, and **public file access**—ideal for automation workflows, content pipelines, or temporary asset storage.
 
 ---
 
-## Features
+## 🧩 Key Features
 
-- **Upload files with metadata** via `/upload/`
-- Files and metadata are stored securely
-- Files are deleted automatically after TTL expiration
-- Publicly accessible file URLs
-- Background cleanup task runs every 60 seconds
-- API key protects all upload and metadata endpoints
-- Static files served via `/files/{filename}`
-- Health check endpoint at `/health`
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Docker & Docker Compose (recommended)
-- Or Python 3.11+ and pip (for manual run)
-- `.env` file with at least the `API_KEY`
+- 🔐 **API Key Authentication**
+- 📁 **File Upload with JSON Metadata**
+- 🕒 **Auto-Expiration via TTL (default 1h)**
+- 🔎 **Metadata Search & Filtering**
+- 🧹 **TTL-based Cleanup System** (cron/external trigger)
+- 🌐 **Public Static File Serving**
+- 💡 **Health Check Endpoint**
+- ⚙️ **Built with FastAPI + SQLite (or PostgreSQL)**
 
 ---
 
-### Environment Variables
+## 🛠️ Use Cases
 
-| Variable              | Description                            | Default                 |
-|-----------------------|----------------------------------------|-------------------------|
-| `API_KEY`             | API key for authentication             | `supersecretapikey`     |
-| `API_KEY_NAME`        | Name of the header for API key         | `x-api-key`             |
-| `MAX_FILE_SIZE`       | Max file size in bytes                 | `10485760` (10 MB)      |
-| `DEFAULT_TTL_SECONDS` | Default time-to-live for files         | `3600` (1 hour)         |
-| `MAX_TTL_SECONDS`     | Max allowed TTL                        | `2592000` (30 days)     |
-| `DATABASE_URL`        | SQLite/PostgreSQL connection string    | `sqlite:///./data/file_metadata.db` |
-| `CLEANUP_INTERVAL_SEC`| File cleanup task interval (in sec)    | `60`                    |
-| `STORAGE_DIR`         | Directory where files are saved        | `storage`               |
-| `CORS_ORIGINS`        | Allowed frontend domains (CORS)        | `["https://yourfrontend.domain"]` |
+- Temporary content storage for AI workflows  
+- Media delivery in headless CMS setups  
+- Automation and backend pipelines (e.g., with [n8n](https://n8n.io/))  
+- Any case where metadata + file + TTL matters
 
 ---
 
-## Run with Docker Compose
+## ⚙️ Quick Start (Docker)
 
 ```bash
-git clone <repo-url>
-cd FileNest
+git clone https://github.com/enzomar/filenest.git
+cd filenest
 docker-compose up --build
 ```
 
-The service will be accessible at:
-
+🔗 Default server:  
 ```
 http://localhost:8000
 ```
 
 ---
 
-## Uploading a File with Metadata
+## 🌍 REST API Overview
 
-Send a POST request to `/upload/` with:
+| Endpoint | Description |
+|----------|-------------|
+| `POST /api/v1/buckets/{bucket}/records/` | Upload a file with TTL & metadata |
+| `GET /api/v1/buckets/{bucket}/records/{id}` | Retrieve metadata for a file |
+| `GET /api/v1/buckets/{bucket}/records` | Search records by metadata |
+| `PUT /metadata/` | Replace metadata |
+| `PATCH /metadata/` | Update a specific metadata field |
+| `DELETE /api/v1/buckets/{bucket}/records/{id}` | Delete file and metadata |
+| `GET /files/{filename}` | Serve static file (public) |
+| `GET /health` | Service health check |
 
-- Header: `x-api-key: your_api_key`
-- Form Data:
-  - `file`: File to upload
-  - `metadata_json`: Metadata in JSON format
-  - `ttl_seconds`: Optional TTL in seconds
+---
 
-### Example with `curl`
+## 📤 Upload Example (cURL)
 
 ```bash
-curl -X POST "http://localhost:8000/upload/" \
-  -H "x-api-key: supersecretapikey" \
-  -F "file=@/path/to/image.png" \
-  -F 'metadata_json={"author":"Vincenzo","description":"Test upload"}' \
-  -F "ttl_seconds=3600"
+curl -X POST http://localhost:8000/api/v1/buckets/demo/records   -H "x-api-key: supersecretapikey"   -F "file=@image.png"   -F 'metadata_json={"author":"Vincenzo","description":"Test upload"}'   -F "ttl_seconds=3600"
 ```
 
-#### Example Response:
-
+📦 Response:
 ```json
 {
-  "id": "c123f9e1-xxx-xxxx-xxxx-xxxxxx",
+  "id": "c123f9e1-xxxx",
   "file_url": "http://localhost:8000/files/image.png"
 }
 ```
 
 ---
 
-## Retrieving File Metadata
-
-Get full metadata and URL by record ID:
-
-```http
-GET /metadata/{id}
-Header: x-api-key: your_api_key
-```
-
-#### Example:
+## 🔍 Fetch Metadata by ID
 
 ```bash
-curl -H "x-api-key: supersecretapikey" http://localhost:8000/metadata/c123f9e1-xxxx
-```
-
-#### Response:
-
-```json
-{
-  "id": "c123f9e1-xxxx",
-  "file_url": "http://localhost:8000/files/image.png",
-  "metadata": {
-    "author": "Vincenzo",
-    "description": "Test upload"
-  },
-  "ttl_seconds": 3600,
-  "upload_time": "2025-06-28T14:01:22.548Z"
-}
+curl -H "x-api-key: supersecretapikey"   http://localhost:8000/api/v1/buckets/demo/records/c123f9e1-xxxx
 ```
 
 ---
 
-## File Access
+## 🌐 Static File Access
 
-Files are served from:
+Uploaded files are accessible publicly via:
 
 ```
 http://localhost:8000/files/{filename}
 ```
 
-These links are public, but the metadata requires API key access.
+Metadata and TTL logic remain secure.
 
 ---
 
-## Cleanup
+## 🔒 Environment Variables (`.env`)
 
-- Files and metadata are removed automatically after TTL.
-- Cleanup runs every 60 seconds.
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `API_KEY` | Required auth key | `supersecretapikey` |
+| `MAX_FILE_SIZE` | Max upload size (bytes) | `10485760` (10MB) |
+| `DEFAULT_TTL_SECONDS` | Default file TTL | `3600` |
+| `MAX_TTL_SECONDS` | Max allowed TTL | `2592000` (30d) |
+| `DATABASE_URL` | DB connection (SQLite/Postgres) | `sqlite:///./data/file_metadata.db` |
+| `CLEANUP_INTERVAL_SEC` | Cleanup run interval | `60` |
+| `STORAGE_DIR` | Path for storing files | `storage` |
+| `CORS_ORIGINS` | Allowed frontend domains | `["*"]` |
 
 ---
 
-## Health Check
+## 🧹 Cleanup Expired Files
 
-Check service status with:
+Files and records are deleted after TTL. Trigger cleanup manually:
+
+```http
+POST /cleanup-expired
+Header: x-api-key: your_api_key
+```
+
+Or run via cron:
+```bash
+curl -X POST http://localhost:8000/cleanup-expired -H "x-api-key: supersecretapikey"
+```
+
+---
+
+## 🧪 Health Check
 
 ```http
 GET /health
 ```
 
 Response:
-
 ```json
-{"status": "ok"}
+{ "status": "ok" }
 ```
 
 ---
 
-## Project Structure
+## 🗂 Project Structure
 
 ```
-FileNest/
-├── storage/                  # Uploaded files
-├── data/                     # SQLite DB directory
-│   └── file_metadata.db
+filenest/
+├── storage/           # Uploaded files
+├── data/              # SQLite or Postgres data
 ├── backend/
-│   ├── main.py               # FastAPI application
-│   ├── requirements.txt
-│   └── Dockerfile
+│   ├── main.py        # FastAPI app
+│   ├── api_filnest.py # Endpoints
+│   └── settings.py    # Config loader
 ├── docker-compose.yml
-└── README.md
+└── .env
 ```
 
 ---
 
-## Customization
+## 🧰 Tips for Production
 
-You can override settings in `.env`:
-
-```ini
-API_KEY=your_own_api_key
-MAX_FILE_SIZE=5242880
-DEFAULT_TTL_SECONDS=1800
-DATABASE_URL=sqlite:///./data/file_metadata.db
-```
-
-Or modify `main.py` for advanced tweaks.
+- Use Nginx or Traefik to serve files & HTTPS  
+- Mount volumes for persistent file + db storage  
+- Use PostgreSQL for concurrency-heavy use  
+- Protect cleanup route via API key or scheduling system  
 
 ---
 
-## Deployment Tips
+## 📄 License
 
-- Serve behind HTTPS proxy (Nginx, Traefik)
-- Let Nginx serve static files directly for performance
-- Mount volumes to persist files and database
-- Use Postgres in production for scaling
+MIT License  
+© [Vincenzo Marafioti](mailto:enzo.mar@gmail.com)
 
 ---
 
-## Troubleshooting
+## 🤝 Contributions Welcome!
 
-| Error Code | Meaning                         | Possible Fix                      |
-|------------|----------------------------------|-----------------------------------|
-| `413`      | Payload Too Large               | File exceeds `MAX_FILE_SIZE`      |
-| `403`      | Forbidden                        | Invalid or missing API key        |
-| `409`      | Conflict                         | File with same name already exists|
-| `404`      | Not Found                        | ID does not exist or file expired |
-
----
-
-## License
-
-MIT License © [Vincenzo Marafioti](mailto:enzo.mar@gmail.com)
-
----
-
-Feel free to submit issues, PRs, or feature requests. Contributions welcome!
+Open issues, fork, submit PRs, or suggest features.  
+FileNest was built for flexibility—adapt it to your use case or automation workflow.
